@@ -1,0 +1,20 @@
+FROM node:20-slim
+
+RUN apt-get update && apt-get install -y openssl curl procps
+
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma/
+
+RUN pnpm install
+
+COPY . .
+
+RUN pnpm exec prisma generate
+
+EXPOSE 3001
+
+CMD ["/bin/sh", "-c", "pnpm run start:dev"]

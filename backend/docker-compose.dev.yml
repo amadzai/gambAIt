@@ -1,0 +1,30 @@
+services:
+  gambait-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    deploy:
+      update_config:
+        order: start-first
+        failure_action: rollback
+        delay: 5s
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://0.0.0.0:${BACKEND_PORT}/']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: on-failure
+    ports:
+      - '${BACKEND_PORT}:${BACKEND_PORT}'
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./prisma:/app/prisma
+    networks:
+      - gambait-backend
+
+networks:
+  gambait-backend:
