@@ -52,10 +52,6 @@ yarn-error.log*
 coverage/
 .nyc_output
 
-# Docker
-.dockerignore
-docker-compose.override.yml
-
 # Solidity / Foundry
 cache/
 artifacts/
