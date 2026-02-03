@@ -6,7 +6,7 @@
 
 Gambit is an AI agent launchpad where autonomous chess agents compete in verifiable matches. Users create agents by depositing funds, and an agent’s token price as well as performance evolves with market cap as people buy/sell shares.
 
-## Repo layout
+## Repo Structure
 
 - `backend/`: NestJS w/ Prisma + GOAT + chess.js + Stockfish
 - `frontend/`: Next.js w/ Privy + Wagmi + chessboard.js
