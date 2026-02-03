@@ -42,7 +42,7 @@ pnpm dev
 
 - Agent creation, playstyles, and GOAT SDK integration are still in progress.
 
-## Smart contracts **[WIP]**
+## Smart Contracts **[WIP]**
 
 - Foundry-based contracts and onchain settlement/token mechanics are still in progress.
 
