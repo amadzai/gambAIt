@@ -95,14 +95,17 @@ chess-service/
 
 ### Move Generation Flow
 
-1. Agent requests moves from backend
-2. Backend determines agent's ELO → Stockfish skill level mapping
-3. Stockfish generates N candidate moves at that skill level
-4. Agent's playstyle filters/ranks the moves:
+1. Backend agent calls `ChessRulesService.requestMove(...)` with the current position (via `gameId` / `fen` / `pgn`) and agent strength (ELO/skill)
+2. `ChessRulesService` resolves the position to a FEN and forwards it to `ChessEngineService` (Stockfish)
+3. Stockfish generates **N candidate moves** using `MultiPV` at the requested strength
+4. The backend agent filters/ranks candidates based on playstyle:
    - Aggressive → prioritize attacking moves
    - Positional → prioritize solid, strategic moves
    - etc.
-5. Selected move is returned and executed
+5. Agent selects a candidate **UCI** move (e.g. `e2e4`, `e7e8q`), converts it to `{ from, to, promotion? }`, then calls `ChessRulesService.makeMove(...)` to validate + persist the move (updates `fen`/`pgn` in DB)
+
+Notes:
+- We keep things simple by assuming **only 1 live match at a time**, so a single Stockfish process with serialized requests is sufficient.
 
 ### Chess Rules Service (chess.js)
 
@@ -148,12 +151,14 @@ Responsibilities:
 All chess-related endpoints route through:
 
 ```
-/api/chess/*
+/chess/*
 ```
 
-The controller interfaces with all chess service providers:
-- Chess Rules Service
-- Chess Engine Service (planned)
+Notes:
+- Swagger UI is available at `/api` and the OpenAPI JSON is at `/api-json`.
+- Most chess endpoints are backed by `ChessRulesService`.
+- The Stockfish integration is internal (used via `ChessRulesService.requestMove(...)`), but we expose a **debug** endpoint to inspect candidates:
+  - `GET /chess/games/:id/engine-moves?multiPv=5&elo=1500&movetimeMs=200`
 
 ---
 
@@ -178,8 +183,10 @@ enum GameStatus {
 model ChessGame {
   id        String     @id @default(cuid())
   fen       String     // Current board state
+  pgn       String     @default("") // Move history (preferred for reconstructing full state)
   turn      Color      // Whose turn
   status    GameStatus // Game state
+
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
@@ -223,11 +230,12 @@ model ChessGame {
 - [x] Frontend UI (chessboard, agent creation form, arena view)
 - [x] Basic NestJS backend structure
 - [x] Prisma schema with game model
-- [x] Chess Rules Service scaffold (chess.js)
+- [x] Chess Rules Service core implementation (create game, load position, legal moves, validate move, make move, resign)
+- [x] Chess Engine Service integrated (Stockfish MultiPV candidate move generation + debug endpoint)
 
 ### In Progress
-- [ ] Chess Rules Service implementation (full chess.js integration)
-- [ ] Chess Engine Service (Stockfish integration)
+- [ ] Agent Service (GOAT SDK integration + playstyle-based move selection)
+- [ ] Match Service (game orchestration)
 
 ### Planned
 - [ ] Agent Service (GOAT SDK integration)
@@ -275,10 +283,9 @@ cd backend
 pnpm install
 cp .env.example .env
 # Configure DATABASE_URL
-docker-compose -f docker-compose.dev.yml up -d  # PostgreSQL
+docker compose -f docker-compose.dev.yml up --build
 pnpm prisma generate
 pnpm prisma db push
-pnpm run start:dev
 ```
 
 ### Frontend
