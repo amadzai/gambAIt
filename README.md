@@ -29,8 +29,6 @@ cp .env.example .env
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-The backend should be available at `http://localhost:3001`
-
 ### Frontend (local)
 
 ```bash
@@ -39,8 +37,6 @@ pnpm install
 cp .env.example .env
 pnpm dev
 ```
-
-Open `http://localhost:3000`.
 
 ## Agents **[WIP]**
 
