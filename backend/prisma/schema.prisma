@@ -30,3 +30,22 @@ model ChessGame {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum Playstyle {
+  AGGRESSIVE
+  DEFENSIVE
+  POSITIONAL
+}
+
+model Agent {
+  id           String    @id @default(cuid())
+  name         String
+  playstyle    Playstyle
+  opening      String?
+  personality  String?
+  profileImage String?
+  elo          Int       @default(1000)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
