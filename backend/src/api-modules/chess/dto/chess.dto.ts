@@ -68,8 +68,8 @@ export class GetLegalMovesQueryDto {
 export class GetEngineMovesQueryDto {
   @ApiPropertyOptional({
     description: 'Number of candidate moves (MultiPV)',
-    example: 5,
-    default: 5,
+    example: 10,
+    default: 10,
   })
   @IsOptional()
   @Type(() => Number)
