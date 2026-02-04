@@ -85,6 +85,12 @@ export class ChessEngineService implements OnModuleDestroy {
     });
   }
 
+  /**
+   * Map an agent strength hint (elo or skill) to Stockfish settings.
+   * - If `skill` is provided: use Skill Level and disable UCI_LimitStrength.
+   * - If `elo` is provided: enable UCI_LimitStrength + UCI_Elo (clamped).
+   * - Otherwise: default to maximum strength.
+   */
   private mapStrength(options: { elo?: number; skill?: number }): {
     skillLevel: number;
     limitStrength: boolean;
@@ -109,6 +115,10 @@ export class ChessEngineService implements OnModuleDestroy {
     return { skillLevel: SKILL_LEVEL_MAX, limitStrength: false, uciElo: null };
   }
 
+  /**
+   * Serialize access to the single Stockfish process.
+   * Stockfish is stateful, so we process one analysis request at a time.
+   */
   private withMutex<T>(fn: () => Promise<T>): Promise<T> {
     const next = this.mutex.then(() => fn());
     this.mutex = next.then(
@@ -118,12 +128,19 @@ export class ChessEngineService implements OnModuleDestroy {
     return next;
   }
 
+  /**
+   * Ensure the Stockfish process is spawned and ready (uciok/readyok).
+   * Safe to call concurrently; initialization is cached in `initPromise`.
+   */
   private ensureEngine(): Promise<void> {
     if (this.initPromise) return this.initPromise;
     this.initPromise = this.startEngine();
     return this.initPromise;
   }
 
+  /**
+   * Spawn Stockfish and wait for it to become ready.
+   */
   private startEngine(): Promise<void> {
     this.logger.log('Spawning Stockfish process');
     return new Promise((resolve, reject) => {
@@ -197,6 +214,9 @@ export class ChessEngineService implements OnModuleDestroy {
     });
   }
 
+  /**
+   * Kill the Stockfish process and clear init state.
+   */
   private stopEngine(): void {
     if (this.process) {
       this.process.kill('SIGKILL');
@@ -205,6 +225,10 @@ export class ChessEngineService implements OnModuleDestroy {
     this.initPromise = null;
   }
 
+  /**
+   * Send a batch of UCI commands to Stockfish and parse MultiPV candidate lines.
+   * Returns one candidate per `multipv` line, ordered by multipv index.
+   */
   private sendAndParse(
     commands: string[],
     multiPv: number,

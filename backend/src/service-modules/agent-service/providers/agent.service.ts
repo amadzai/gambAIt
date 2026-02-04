@@ -44,6 +44,17 @@ export class AgentService {
     private readonly openRouterService: OpenRouterService,
   ) {}
 
+  /**
+   * Make a single move for the given agent in the given game.
+   *
+   * Flow:
+   * - Fetch agent config (playstyle/opening/elo)
+   * - Ask Stockfish for MultiPV candidate moves at that strength
+   * - Prefer opening match if opening is a UCI move present in candidates
+   * - Otherwise ask OpenRouter to pick one candidate based on playstyle
+   * - Apply the chosen move via ChessRulesService.makeMove()
+   * - Fall back to Stockfish top candidate if the LLM output is invalid
+   */
   async makeAgentMove(
     agentId: string,
     req: AgentMoveRequest,
@@ -105,6 +116,10 @@ export class AgentService {
     };
   }
 
+  /**
+   * Normalize a preferred opening string into a UCI move (e.g. `e2e4`) when possible.
+   * If the value is not a UCI-looking string, return null (treated as a hint only).
+   */
   private normalizePreferredOpening(opening?: string | null): string | null {
     if (!opening) return null;
     const trimmed = opening.trim().toLowerCase();
@@ -113,6 +128,9 @@ export class AgentService {
     return UCI_REGEX.test(trimmed) ? trimmed : null;
   }
 
+  /**
+   * Convert a UCI move string into `{ from, to, promotion? }` for ChessRulesService.makeMove().
+   */
   private uciToMoveDto(uci: string): MakeMoveDto {
     const move = uci.trim().toLowerCase();
     if (!UCI_REGEX.test(move)) {
@@ -125,12 +143,16 @@ export class AgentService {
     return { from, to, promotion };
   }
 
+  /**
+   * Ask the LLM to choose one candidate UCI move from the engine output.
+   * Returns null if parsing/validation fails.
+   */
   private async chooseCandidateWithLlm(
     agent: Agent,
     engine: EngineMoveResponse,
   ): Promise<string | null> {
     const enriched = engine.candidates.map((c, idx) => {
-      const meta = this.enrichCandidate(engine.fen, c.uci);
+      const meta = this.enrichCandidateMoves(engine.fen, c.uci);
       return {
         i: idx + 1,
         uci: c.uci,
@@ -181,6 +203,9 @@ export class AgentService {
     return uci && UCI_REGEX.test(uci.toLowerCase()) ? uci.toLowerCase() : null;
   }
 
+  /**
+   * Convert a playstyle enum to a short selection heuristic for the prompt.
+   */
   private playstyleGuidance(playstyle: Playstyle): string {
     switch (playstyle) {
       case Playstyle.AGGRESSIVE:
@@ -194,7 +219,11 @@ export class AgentService {
     }
   }
 
-  private enrichCandidate(
+  /**
+   * Enrich a UCI candidate move with a few lightweight chess.js-derived features
+   * (SAN, capture/check flags) to help the LLM choose among candidates.
+   */
+  private enrichCandidateMoves(
     fen: string,
     uci: string,
   ): { san: string; isCapture: boolean; givesCheck: boolean } | null {
@@ -215,6 +244,10 @@ export class AgentService {
     }
   }
 
+  /**
+   * Parse a JSON object from model output. If the output includes extra text,
+   * attempts to extract the first `{...}` block.
+   */
   private parseJsonObject<T>(text: string): T | null {
     const trimmed = text.trim();
     try {

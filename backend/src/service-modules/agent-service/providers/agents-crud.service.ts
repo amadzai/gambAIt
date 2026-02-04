@@ -17,6 +17,10 @@ export type UpdateAgentInput = Partial<CreateAgentInput>;
 export class AgentsCrudService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Create a new agent record.
+   * Used by the Agents API when an agent is first registered.
+   */
   async create(input: CreateAgentInput): Promise<Agent> {
     return this.prisma.agent.create({
       data: {
@@ -30,6 +34,10 @@ export class AgentsCrudService {
     });
   }
 
+  /**
+   * Update an existing agent with a partial payload.
+   * Only fields present in the input are updated.
+   */
   async update(agentId: string, input: UpdateAgentInput): Promise<Agent> {
     const data: UpdateAgentInput = {};
     if (input.name !== undefined) data.name = input.name;
@@ -50,6 +58,9 @@ export class AgentsCrudService {
     }
   }
 
+  /**
+   * Get a single agent by id.
+   */
   async get(agentId: string): Promise<Agent> {
     const agent = await this.prisma.agent.findUnique({
       where: { id: agentId },
@@ -60,6 +71,9 @@ export class AgentsCrudService {
     return agent;
   }
 
+  /**
+   * List agents (newest first).
+   */
   async list(): Promise<Agent[]> {
     return this.prisma.agent.findMany({ orderBy: { createdAt: 'desc' } });
   }

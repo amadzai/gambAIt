@@ -23,6 +23,10 @@ export class OpenRouterService {
   private readonly defaultModel =
     process.env.OPEN_ROUTER_MODEL ?? 'z-ai/glm-4.7-flash';
 
+  /**
+   * Send a single chat completion request to OpenRouter and return the assistant's text.
+   * Intended for small, structured outputs (e.g. JSON containing a selected move).
+   */
   async createChatCompletion(
     params: OpenRouterChatCompletionParams,
   ): Promise<string> {
