@@ -32,7 +32,7 @@ gambit/
 - **Database**: PostgreSQL with Prisma ORM
 - **Chess Rules**: chess.js
 - **Chess Engine**: Stockfish
-- **AI Agents**: GOAT SDK
+- **AI Agents**: OpenRouter (`z-ai/glm-4.7-flash`) for playstyle-based move selection
 
 ### Frontend (`/frontend`)
 
@@ -56,8 +56,9 @@ gambit/
 |----------|-------------|
 | `name` | Agent display name |
 | `personality` | Agent character description |
-| `playstyle` | Aggressive, Defensive, Balanced, Chaotic, or Positional |
-| `firstMove` | Opening move (e4, d4, c4, Nf3, g3, b3, f4) |
+| `playstyle` | Aggressive, Defensive, or Positional |
+| `opening` | Preferred opening hint (string; optionally UCI like `e2e4`) |
+| `profileImage` | URL (stored in Supabase later) |
 | `elo` | Rating derived from market cap |
 | `marketCap` | Total value of agent's token |
 
@@ -65,8 +66,6 @@ gambit/
 
 - **Aggressive**: Prefers attacking moves, sacrifices, forward momentum
 - **Defensive**: Solid, prophylactic moves, prioritizes safety
-- **Balanced**: Mix of attack and defense based on position
-- **Chaotic**: Unpredictable, may choose suboptimal but tricky moves
 - **Positional**: Focus on piece placement, pawn structure, long-term advantages
 
 ### ELO ↔ Market Cap Correlation
@@ -98,11 +97,9 @@ chess-service/
 1. Backend agent calls `ChessRulesService.requestMove(...)` with the current position (via `gameId` / `fen` / `pgn`) and agent strength (ELO/skill)
 2. `ChessRulesService` resolves the position to a FEN and forwards it to `ChessEngineService` (Stockfish)
 3. Stockfish generates **N candidate moves** using `MultiPV` at the requested strength
-4. The backend agent filters/ranks candidates based on playstyle:
-   - Aggressive → prioritize attacking moves
-   - Positional → prioritize solid, strategic moves
-   - etc.
+4. The backend agent calls OpenRouter (`z-ai/glm-4.7-flash`) with the candidate list + agent metadata (playstyle/personality/opening) and asks the LLM to pick **one** candidate
 5. Agent selects a candidate **UCI** move (e.g. `e2e4`, `e7e8q`), converts it to `{ from, to, promotion? }`, then calls `ChessRulesService.makeMove(...)` to validate + persist the move (updates `fen`/`pgn` in DB)
+   - If the LLM response is invalid/unparseable, we fall back to Stockfish’s top candidate
 
 Notes:
 - We keep things simple by assuming **only 1 live match at a time**, so a single Stockfish process with serialized requests is sufficient.
@@ -229,17 +226,16 @@ model ChessGame {
 ### Completed
 - [x] Frontend UI (chessboard, agent creation form, arena view)
 - [x] Basic NestJS backend structure
-- [x] Prisma schema with game model
+- [x] Prisma schema with game + agent models
 - [x] Chess Rules Service core implementation (create game, load position, legal moves, validate move, make move, resign)
 - [x] Chess Engine Service integrated (Stockfish MultiPV candidate move generation + debug endpoint)
+- [x] Agent model + Agent API (`/agents/*`)
+- [x] Agent move selection via OpenRouter (`z-ai/glm-4.7-flash`) over Stockfish MultiPV candidates
 
 ### In Progress
-- [ ] Agent Service (GOAT SDK integration + playstyle-based move selection)
 - [ ] Match Service (game orchestration)
 
 ### Planned
-- [ ] Agent Service (GOAT SDK integration)
-- [ ] Match Service (game orchestration)
 - [ ] Smart contracts (Foundry)
 - [ ] Backend ↔ Dapp integration
 
@@ -253,9 +249,8 @@ model ChessGame {
 3. Implement move generation with skill levels
 
 ### Phase 2: Agent System
-1. GOAT SDK integration
-2. Playstyle-based move selection
-3. Agent creation and management
+1. OpenRouter integration for style-based move selection (`z-ai/glm-4.7-flash`)
+2. Agent creation and management
 
 ### Phase 3: Match System
 1. Match orchestration
@@ -312,7 +307,7 @@ forge test
 ### Backend
 - `chess.js` - Chess rules and move validation
 - `stockfish` - Chess engine for move generation
-- `@goat-sdk/*` - AI agent framework
+- OpenRouter (`z-ai/glm-4.7-flash`) - LLM-based move selection among Stockfish candidates
 - `@prisma/client` - Database ORM
 - `@nestjs/*` - Backend framework
 
