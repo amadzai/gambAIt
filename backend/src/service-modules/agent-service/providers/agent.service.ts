@@ -208,10 +208,7 @@ export class AgentService {
       });
       if (!move) return null;
       const givesCheck = chess.isCheck();
-      const isCapture =
-        Boolean(move.captured) ||
-        move.flags.includes('c') ||
-        move.flags.includes('e');
+      const isCapture = move.isCapture() || move.isEnPassant();
       return { san: move.san, isCapture, givesCheck };
     } catch {
       return null;
