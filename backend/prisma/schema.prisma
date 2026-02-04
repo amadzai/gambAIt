@@ -27,9 +27,16 @@ model ChessGame {
   turn   Color
   status GameStatus
 
+  whiteAgentId String
+  blackAgentId String
+
+  whiteAgent Agent @relation("WhiteGames", fields: [whiteAgentId], references: [id])
+  blackAgent Agent @relation("BlackGames", fields: [blackAgentId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
 
 enum Playstyle {
   AGGRESSIVE
@@ -45,6 +52,9 @@ model Agent {
   personality  String?
   profileImage String?
   elo          Int       @default(1000)
+
+  whiteGames ChessGame[] @relation("WhiteGames")
+  blackGames ChessGame[] @relation("BlackGames")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
