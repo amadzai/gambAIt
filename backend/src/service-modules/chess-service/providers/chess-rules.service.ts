@@ -10,6 +10,7 @@ import {
   Color,
   GameStatus,
   ChessGame,
+  Winner,
 } from '../../../../generated/prisma/client.js';
 import {
   LegalMove,
@@ -32,15 +33,20 @@ export class ChessRulesService {
   ) {}
 
   /**
-   * Create a new chess game with starting position
+   * Create a new chess game with starting position and assigned agents.
    */
-  async createGame(): Promise<ChessGame> {
+  async createGame(input: {
+    whiteAgentId: string;
+    blackAgentId: string;
+  }): Promise<ChessGame> {
     const chess = new Chess();
     const game = await this.prisma.chessGame.create({
       data: {
         fen: chess.fen(),
         turn: Color.WHITE,
         status: GameStatus.ACTIVE,
+        whiteAgentId: input.whiteAgentId,
+        blackAgentId: input.blackAgentId,
       },
     });
     this.logger.log(`Game created: ${game.id}`);
@@ -99,14 +105,17 @@ export class ChessRulesService {
 
     const newStatus = this.determineGameStatus(chess);
     const newTurn = chess.turn() === 'w' ? Color.WHITE : Color.BLACK;
+    const winner = this.determineWinner(newStatus, newTurn);
+    const pgn = this.stripPgnHeaders(chess.pgn());
 
     const updatedGame = await this.prisma.chessGame.update({
       where: { id: gameId },
       data: {
         fen: chess.fen(),
-        pgn: chess.pgn(),
+        pgn,
         turn: newTurn,
         status: newStatus,
+        winner,
       },
     });
 
@@ -319,5 +328,36 @@ export class ChessRulesService {
       return GameStatus.DRAW;
     }
     return GameStatus.ACTIVE;
+  }
+
+  /**
+   * Determine winner from a terminal status and the next turn.
+   * Note: after a move is applied, chess.js turn() is the *next* player to move.
+   */
+  private determineWinner(status: GameStatus, nextTurn: Color): Winner | null {
+    if (status === GameStatus.CHECKMATE) {
+      return nextTurn === Color.WHITE ? Winner.BLACK : Winner.WHITE;
+    }
+    if (status === GameStatus.DRAW || status === GameStatus.STALEMATE) {
+      return Winner.DRAW;
+    }
+    return null;
+  }
+
+  /**
+   * Strip PGN header tags (e.g. [Event "..."]) and return movetext only.
+   * Keeps the move list starting at "1." so DB storage is compact and readable.
+   */
+  private stripPgnHeaders(pgn: string): string {
+    const trimmed = pgn.trim();
+    const parts = trimmed.split(/\r?\n\r?\n/);
+    const last = parts[parts.length - 1] ?? '';
+    const candidate = last.trim();
+    if (candidate !== '') return candidate;
+
+    return trimmed
+      .replace(/^\s*\[[^\]]+\]\s*$/gm, '')
+      .replace(/\r?\n{2,}/g, '\n')
+      .trim();
   }
 }

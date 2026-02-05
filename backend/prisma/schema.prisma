@@ -20,12 +20,47 @@ enum GameStatus {
   RESIGNED
 }
 
+enum Winner {
+  WHITE
+  BLACK
+  DRAW
+}
+
 model ChessGame {
   id     String     @id @default(cuid())
   fen    String
   pgn    String     @default("")
   turn   Color
   status GameStatus
+  winner Winner?
+
+  whiteAgentId String
+  blackAgentId String
+
+  whiteAgent Agent @relation("WhiteGames", fields: [whiteAgentId], references: [id])
+  blackAgent Agent @relation("BlackGames", fields: [blackAgentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Playstyle {
+  AGGRESSIVE
+  DEFENSIVE
+  POSITIONAL
+}
+
+model Agent {
+  id           String    @id @default(cuid())
+  name         String
+  playstyle    Playstyle
+  opening      String?
+  personality  String?
+  profileImage String?
+  elo          Int       @default(1000)
+
+  whiteGames ChessGame[] @relation("WhiteGames")
+  blackGames ChessGame[] @relation("BlackGames")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

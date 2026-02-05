@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Color, GameStatus } from '../../../../generated/prisma/client.js';
+import {
+  Color,
+  GameStatus,
+  Winner,
+} from '../../../../generated/prisma/client.js';
 
 export class ChessGameResponseDto {
   @ApiProperty({
@@ -33,6 +37,25 @@ export class ChessGameResponseDto {
     example: 'ACTIVE',
   })
   status: GameStatus;
+
+  @ApiPropertyOptional({
+    description: 'Winner when game ends (WHITE, BLACK, or DRAW)',
+    enum: Winner,
+    example: 'WHITE',
+  })
+  winner?: Winner | null;
+
+  @ApiProperty({
+    description: 'Agent id playing as White',
+    example: 'clx1234567890',
+  })
+  whiteAgentId: string;
+
+  @ApiProperty({
+    description: 'Agent id playing as Black',
+    example: 'clx1234567890',
+  })
+  blackAgentId: string;
 
   @ApiProperty({
     description: 'Game creation timestamp',

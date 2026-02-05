@@ -1,0 +1,38 @@
+import type { Agent } from '../../../../generated/prisma/client.js';
+import type { EngineMoveResponse } from '../../chess-service/interfaces/chess-engine.interface.js';
+import type {
+  MakeMoveDto,
+  MoveResult,
+} from '../../chess-service/interfaces/chess-rules.interface.js';
+
+/**
+ * Input for making an agent-controlled move.
+ */
+export type AgentMoveRequest = {
+  /** Target chess game id. */
+  gameId: string;
+  /** Number of Stockfish candidate moves (MultiPV). */
+  multiPv?: number;
+  /** Stockfish analysis time in milliseconds. */
+  movetimeMs?: number;
+  /** Stockfish analysis depth (alternative to movetimeMs). */
+  depth?: number;
+};
+
+/**
+ * Result of making an agent-controlled move.
+ */
+export type AgentMoveResponse = {
+  /** Agent configuration used for the move. */
+  agent: Agent;
+  /** Engine analysis that the agent/LLM selected from. */
+  engine: EngineMoveResponse;
+  /** Selected move in UCI format (e.g. e2e4, e7e8q). */
+  selectedUci: string;
+  /** Applied move payload passed to ChessRulesService.makeMove(). */
+  appliedMove: MakeMoveDto;
+  /** Result returned by ChessRulesService.makeMove(). */
+  moveResult: MoveResult;
+  /** True when the LLM output was invalid and we used a fallback move. */
+  fallbackUsed: boolean;
+};
