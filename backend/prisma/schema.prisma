@@ -37,7 +37,6 @@ model ChessGame {
   updatedAt DateTime @updatedAt
 }
 
-
 enum Playstyle {
   AGGRESSIVE
   DEFENSIVE
