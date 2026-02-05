@@ -100,7 +100,11 @@ export class AgentService {
         this.logger.log(
           `LLM selection start agentId=${agent.id} playstyle=${agent.playstyle} candidates=${engine.candidates.length}`,
         );
-        selectedUci = await this.chooseCandidateWithLlm(agent, engine);
+        selectedUci = await this.chooseCandidateWithLlm(
+          agent,
+          engine,
+          game.pgn,
+        );
         this.logger.log(`LLM selection result uci=${selectedUci ?? '—'}`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -167,6 +171,7 @@ export class AgentService {
   private async chooseCandidateWithLlm(
     agent: Agent,
     engine: EngineMoveResponse,
+    pgn?: string | null,
   ): Promise<string | null> {
     const enriched = engine.candidates.map((c, idx) => {
       const meta = this.enrichCandidateMoves(engine.fen, c.uci);
@@ -185,14 +190,18 @@ export class AgentService {
     const sideToMove = engine.fen.split(/\s+/)[1] === 'b' ? 'BLACK' : 'WHITE';
     const allowedUcis = engine.candidates.map((c) => c.uci).join(', ');
     const maxPick = engine.candidates.length;
+    const pgnContext =
+      pgn && pgn.trim() !== '' ? pgn.trim().slice(-600) : '(no moves yet)';
     // const personalityHint =
     //   agent.personality && agent.personality.trim() !== ''
     //     ? `Personality: "${agent.personality.trim()}".`
     //     : 'No personality.';
 
     const prompt = [
-      `You are a chess agent. Choose exactly ONE move from the provided candidates.`,
+      `You are a chess agent. Analyze the position from the FEN and PGN, then choose exactly ONE move from the provided candidates.`,
       `It is ${sideToMove} to move.`,
+      `Current FEN: ${engine.fen}`,
+      `Current PGN (recent): ${pgnContext}`,
       `Playstyle: ${agent.playstyle}. ${playstyleGuidance}`,
       // personalityHint,
       `You MUST choose by index from the candidate list.`,
