@@ -84,17 +84,6 @@ export class GetEngineMovesQueryDto {
   elo?: number;
 
   @ApiPropertyOptional({
-    description: 'Stockfish skill level 0–20 (overrides elo if both provided)',
-    example: 10,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  @Max(20)
-  skill?: number;
-
-  @ApiPropertyOptional({
     description: 'Analysis time in milliseconds',
     example: 200,
   })

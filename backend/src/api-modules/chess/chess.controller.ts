@@ -96,7 +96,6 @@ export class ChessController {
       gameId: id,
       multiPv: query.multiPv,
       elo: query.elo,
-      skill: query.skill,
       movetimeMs: query.movetimeMs,
     });
   }

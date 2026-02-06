@@ -37,7 +37,6 @@ export class ChessEngineService implements OnModuleDestroy {
       multiPv?: number;
       movetimeMs?: number;
       elo?: number;
-      skill?: number;
     } = {},
   ): Promise<EngineMoveResponse> {
     const multiPv = Math.min(
@@ -48,17 +47,20 @@ export class ChessEngineService implements OnModuleDestroy {
 
     return this.withMutex(async () => {
       this.logger.log(
-        `getCandidateMoves fen="${fen.slice(0, 30)}…" multiPv=${multiPv} movetimeMs=${movetimeMs} elo=${options.elo ?? '—'} skill=${options.skill ?? '—'}`,
+        `getCandidateMoves fen="${fen.slice(0, 30)}…" multiPv=${multiPv} movetimeMs=${movetimeMs} elo=${options.elo ?? '—'}`,
       );
       await this.ensureEngine();
       const timeoutMs = movetimeMs + ANALYSIS_TIMEOUT_BUFFER_MS;
 
-      const { skillLevel, limitStrength, uciElo } = this.mapStrength(options);
+      const { limitStrength, uciElo } = this.mapStrength(options);
 
       const commands: string[] = [
         'ucinewgame',
         `setoption name MultiPV value ${multiPv}`,
-        `setoption name Skill Level value ${skillLevel}`,
+        /* Max is used for base skill level, uses Limit Strength and
+         * ELO to determine true Skill Level
+         */
+        `setoption name Skill Level value ${SKILL_LEVEL_MAX}`,
       ];
       if (limitStrength && uciElo != null) {
         commands.push('setoption name UCI_LimitStrength value true');
@@ -79,33 +81,23 @@ export class ChessEngineService implements OnModuleDestroy {
   }
 
   /**
-   * Map an agent strength hint (elo or skill) to Stockfish settings.
-   * - If `skill` is provided: use Skill Level and disable UCI_LimitStrength.
+   * Map an agent strength hint (elo) to Stockfish settings.
    * - If `elo` is provided: enable UCI_LimitStrength + UCI_Elo (clamped).
    * - Otherwise: default to maximum strength.
    */
-  private mapStrength(options: { elo?: number; skill?: number }): {
-    skillLevel: number;
+  private mapStrength(options: { elo?: number }): {
     limitStrength: boolean;
     uciElo: number | null;
   } {
-    if (options.skill != null) {
-      const skillLevel = Math.min(
-        Math.max(0, Math.round(options.skill)),
-        SKILL_LEVEL_MAX,
-      );
-      return { skillLevel, limitStrength: false, uciElo: null };
-    }
     if (options.elo != null) {
       const elo = Math.min(Math.max(ELO_MIN, Math.round(options.elo)), ELO_MAX);
       const uciElo = Math.min(Math.max(UCI_ELO_MIN, elo), UCI_ELO_MAX);
       return {
-        skillLevel: SKILL_LEVEL_MAX,
         limitStrength: true,
         uciElo,
       };
     }
-    return { skillLevel: SKILL_LEVEL_MAX, limitStrength: false, uciElo: null };
+    return { limitStrength: false, uciElo: null };
   }
 
   /**

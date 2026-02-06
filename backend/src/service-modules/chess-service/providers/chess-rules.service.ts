@@ -173,7 +173,6 @@ export class ChessRulesService {
       multiPv: request.multiPv,
       movetimeMs: request.movetimeMs,
       elo: request.elo,
-      skill: request.skill,
     });
     this.logger.log(
       `requestMove returning ${result.candidates.length} candidate(s)`,

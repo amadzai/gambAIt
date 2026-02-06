@@ -9,10 +9,8 @@ export interface EngineMoveRequest {
   multiPv?: number;
   /** Analysis time in milliseconds. */
   movetimeMs?: number;
-  /** Agent ELO for strength (mapped to Stockfish Skill Level / UCI_Elo). */
+  /** Agent ELO for strength (mapped to Stockfish UCI_Elo). */
   elo?: number;
-  /** Direct Stockfish skill level 0–20 (overrides elo if both provided). */
-  skill?: number;
 }
 
 /**
