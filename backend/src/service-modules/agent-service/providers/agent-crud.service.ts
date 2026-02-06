@@ -4,15 +4,15 @@ import { Agent } from '../../../../generated/prisma/client.js';
 import type {
   CreateAgentInput,
   UpdateAgentInput,
-} from '../interfaces/agents-crud.interface.js';
+} from '../interfaces/agent-crud.interface.js';
 
 @Injectable()
-export class AgentsCrudService {
+export class AgentCrudService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Create a new agent record.
-   * Used by the Agents API when an agent is first registered.
+   * Used by the Agent API when an agent is first registered.
    */
   async create(input: CreateAgentInput): Promise<Agent> {
     return this.prisma.agent.create({
