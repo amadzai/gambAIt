@@ -7,7 +7,6 @@ import {
   Param,
   Post,
   Put,
-  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -45,7 +44,7 @@ export class AgentController {
     type: AgentResponseDto,
   })
   async create(@Body() dto: CreateAgentDto): Promise<AgentResponseDto> {
-    return this.agentCrudService.create(dto);
+    return this.agentCrudService.create({ data: dto });
   }
 
   @Put(':id')
@@ -62,23 +61,9 @@ export class AgentController {
     @Param('id') id: string,
     @Body() dto: UpdateAgentDto,
   ): Promise<AgentResponseDto> {
-    if (
-      dto.name === undefined &&
-      dto.playstyle === undefined &&
-      dto.opening === undefined &&
-      dto.personality === undefined &&
-      dto.profileImage === undefined &&
-      dto.elo === undefined
-    ) {
-      throw new BadRequestException('No fields provided to update');
-    }
-    return this.agentCrudService.update(id, {
-      name: dto.name,
-      playstyle: dto.playstyle,
-      opening: dto.opening,
-      personality: dto.personality,
-      profileImage: dto.profileImage,
-      elo: dto.elo,
+    return this.agentCrudService.update({
+      where: { id },
+      data: dto,
     });
   }
 
@@ -90,7 +75,7 @@ export class AgentController {
     type: [AgentResponseDto],
   })
   async list(): Promise<AgentResponseDto[]> {
-    return this.agentCrudService.list();
+    return this.agentCrudService.list({ orderBy: { createdAt: 'desc' } });
   }
 
   @Get(':id')
@@ -103,7 +88,7 @@ export class AgentController {
   })
   @ApiResponse({ status: 404, description: 'Agent not found' })
   async get(@Param('id') id: string): Promise<AgentResponseDto> {
-    return this.agentCrudService.get(id);
+    return this.agentCrudService.get({ id });
   }
 
   @Post(':id/move')
