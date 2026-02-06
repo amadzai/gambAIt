@@ -98,7 +98,6 @@ export class ChessController {
       elo: query.elo,
       skill: query.skill,
       movetimeMs: query.movetimeMs,
-      depth: query.depth,
     });
   }
 }

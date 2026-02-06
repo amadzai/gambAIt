@@ -104,15 +104,4 @@ export class GetEngineMovesQueryDto {
   @Min(50)
   @Max(60000)
   movetimeMs?: number;
-
-  @ApiPropertyOptional({
-    description: 'Analysis depth (alternative to movetimeMs)',
-    example: 10,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  depth?: number;
 }

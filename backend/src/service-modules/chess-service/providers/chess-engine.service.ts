@@ -36,7 +36,6 @@ export class ChessEngineService implements OnModuleDestroy {
     options: {
       multiPv?: number;
       movetimeMs?: number;
-      depth?: number;
       elo?: number;
       skill?: number;
     } = {},
@@ -46,15 +45,13 @@ export class ChessEngineService implements OnModuleDestroy {
       500,
     );
     const movetimeMs = options.movetimeMs ?? DEFAULT_MOVETIME_MS;
-    const depth = options.depth;
 
     return this.withMutex(async () => {
       this.logger.log(
         `getCandidateMoves fen="${fen.slice(0, 30)}…" multiPv=${multiPv} movetimeMs=${movetimeMs} elo=${options.elo ?? '—'} skill=${options.skill ?? '—'}`,
       );
       await this.ensureEngine();
-      const timeoutMs =
-        (depth ? 60000 : movetimeMs) + ANALYSIS_TIMEOUT_BUFFER_MS;
+      const timeoutMs = movetimeMs + ANALYSIS_TIMEOUT_BUFFER_MS;
 
       const { skillLevel, limitStrength, uciElo } = this.mapStrength(options);
 
@@ -71,11 +68,7 @@ export class ChessEngineService implements OnModuleDestroy {
       }
       commands.push('isready');
       commands.push(`position fen ${fen}`);
-      if (depth != null && depth > 0) {
-        commands.push(`go depth ${depth}`);
-      } else {
-        commands.push(`go movetime ${movetimeMs}`);
-      }
+      commands.push(`go movetime ${movetimeMs}`);
 
       const candidates = await this.sendAndParse(commands, multiPv, timeoutMs);
       this.logger.log(

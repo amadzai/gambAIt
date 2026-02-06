@@ -8,7 +8,7 @@ import { Chess, Square } from 'chess.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ChessRulesService } from '../../chess-service/providers/chess-rules.service.js';
 import { EngineMoveResponse } from '../../chess-service/interfaces/chess-engine.interface.js';
-import { MakeMoveDto } from '../../chess-service/interfaces/chess-rules.interface.js';
+import { MakeMove } from '../../chess-service/interfaces/chess-rules.interface.js';
 import { OpenRouterService } from './openrouter.service.js';
 import {
   Agent,
@@ -77,7 +77,6 @@ export class AgentService {
       elo: agent.elo,
       multiPv: req.multiPv ?? DEFAULT_MULTI_PV,
       movetimeMs: req.movetimeMs,
-      depth: req.depth,
     });
 
     if (!engine.candidates || engine.candidates.length === 0) {
@@ -152,7 +151,7 @@ export class AgentService {
   /**
    * Convert a UCI move string into `{ from, to, promotion? }` for ChessRulesService.makeMove().
    */
-  private uciToMoveDto(uci: string): MakeMoveDto {
+  private uciToMoveDto(uci: string): MakeMove {
     const move = uci.trim().toLowerCase();
     if (!UCI_REGEX.test(move)) {
       throw new BadRequestException(`Invalid UCI move: "${uci}"`);

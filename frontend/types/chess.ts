@@ -66,6 +66,5 @@ export type EngineMovesQuery = {
   elo?: number;
   skill?: number;
   movetimeMs?: number;
-  depth?: number;
 };
 

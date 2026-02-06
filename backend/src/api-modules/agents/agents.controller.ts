@@ -128,7 +128,6 @@ export class AgentsController {
       gameId: dto.gameId,
       multiPv: dto.multiPv,
       movetimeMs: dto.movetimeMs,
-      depth: dto.depth,
     });
   }
 }

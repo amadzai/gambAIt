@@ -161,7 +161,6 @@ export class ChessRulesService {
     const result = await this.chessEngineService.getCandidateMoves(fen, {
       multiPv: request.multiPv,
       movetimeMs: request.movetimeMs,
-      depth: request.depth,
       elo: request.elo,
       skill: request.skill,
     });
