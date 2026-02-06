@@ -4,7 +4,7 @@ import { ChessGame } from '../../../../generated/prisma/client.js';
 /**
  * Input for making a move in a game (source square, target square, optional promotion).
  */
-export interface MakeMoveDto {
+export interface MakeMove {
   /** Source square in algebraic notation (e.g. e2). */
   from: string;
   /** Target square in algebraic notation (e.g. e4). */

@@ -12,10 +12,7 @@ import {
   ChessGame,
   Winner,
 } from '../../../../generated/prisma/client.js';
-import {
-  MakeMoveDto,
-  MoveResult,
-} from '../interfaces/chess-rules.interface.js';
+import { MakeMove, MoveResult } from '../interfaces/chess-rules.interface.js';
 import {
   EngineMoveRequest,
   EngineMoveResponse,
@@ -71,8 +68,10 @@ export class ChessRulesService {
    * Make a move in a game
    * Validates the move, updates the game state, and returns the result
    */
-  async makeMove(gameId: string, moveDto: MakeMoveDto): Promise<MoveResult> {
-    this.logger.log(`makeMove gameId=${gameId} ${moveDto.from}→${moveDto.to}`);
+  async makeMove(gameId: string, makeMove: MakeMove): Promise<MoveResult> {
+    this.logger.log(
+      `makeMove gameId=${gameId} ${makeMove.from}→${makeMove.to}`,
+    );
     const game = await this.getGame(gameId);
 
     if (game.status !== GameStatus.ACTIVE) {
@@ -86,19 +85,19 @@ export class ChessRulesService {
     let move: Move;
     try {
       move = chess.move({
-        from: moveDto.from as Square,
-        to: moveDto.to as Square,
-        promotion: moveDto.promotion,
+        from: makeMove.from as Square,
+        to: makeMove.to as Square,
+        promotion: makeMove.promotion,
       });
     } catch {
       throw new BadRequestException(
-        `Invalid move: ${moveDto.from} to ${moveDto.to}`,
+        `Invalid move: ${makeMove.from} to ${makeMove.to}`,
       );
     }
 
     if (!move) {
       throw new BadRequestException(
-        `Invalid move: ${moveDto.from} to ${moveDto.to}`,
+        `Invalid move: ${makeMove.from} to ${makeMove.to}`,
       );
     }
 
@@ -152,17 +151,6 @@ export class ChessRulesService {
         );
       }
       const chess = this.loadGameState(game);
-      fen = chess.fen();
-    } else if (request.fen) {
-      const chess = new Chess(request.fen);
-      fen = chess.fen();
-    } else if (request.pgn && request.pgn.trim() !== '') {
-      const chess = new Chess();
-      try {
-        chess.loadPgn(request.pgn);
-      } catch {
-        throw new BadRequestException('Invalid PGN');
-      }
       fen = chess.fen();
     } else {
       throw new BadRequestException(
