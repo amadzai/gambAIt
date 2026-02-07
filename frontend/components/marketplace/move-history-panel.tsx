@@ -28,7 +28,7 @@ export function MoveHistoryPanel({
         </span>
       </div>
 
-      <div className="space-y-1 max-h-[400px] overflow-y-auto">
+      <div className="space-y-1 max-h-[400px] overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
         {moves.map((move) => (
           <div
             key={move.moveNumber}
