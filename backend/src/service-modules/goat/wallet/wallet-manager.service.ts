@@ -7,7 +7,7 @@ import {
   type WalletClient,
   type Hex,
 } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import {
   EVMWalletClient,
   type EVMTransaction,
@@ -141,14 +141,22 @@ export class WalletManagerService {
     return decrypted;
   }
 
+  /**
+   * Generate a new random key pair for an agent wallet.
+   * Caller should encrypt the private key and store it; the raw key is only returned once.
+   */
+  generateNewKeyPair(): { address: string; privateKey: Hex } {
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    return { address: account.address, privateKey };
+  }
+
   getOrCreateWallet(agentId: string, privateKey: Hex): EVMWalletClient {
     const existing = this.wallets.get(agentId);
     if (existing) return existing;
 
     const account = privateKeyToAccount(privateKey);
-    const transport = http(
-      process.env.BASE_SEPOLIA_RPC_URL ?? 'https://sepolia.base.org',
-    );
+    const transport = http(process.env.RPC_URL ?? 'https://sepolia.base.org');
 
     const walletClient = createWalletClient({
       account,
@@ -164,9 +172,7 @@ export class WalletManagerService {
     const evmWallet = new ViemEVMWalletClient(walletClient, publicClient);
     this.wallets.set(agentId, evmWallet);
 
-    this.logger.log(
-      `Wallet created for agent ${agentId}: ${account.address}`,
-    );
+    this.logger.log(`Wallet created for agent ${agentId}: ${account.address}`);
     return evmWallet;
   }
 

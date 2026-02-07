@@ -5,6 +5,6 @@ import { AIAgentService } from './ai/ai-agent.service.js';
 
 @Module({
   providers: [GoatService, WalletManagerService, AIAgentService],
-  exports: [GoatService],
+  exports: [GoatService, WalletManagerService],
 })
 export class GoatServiceModule {}
