@@ -54,8 +54,8 @@ export default function MatchPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <MarketplaceNav />
 
-      <div className="max-w-[1800px] mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_350px] gap-6">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[60px_1fr_320px] gap-6">
           {/* Left Column - Evaluation Bar (hidden on mobile) */}
           <div className="hidden lg:block">
             <EvaluationBar evaluation={currentEvaluation} />
@@ -104,8 +104,8 @@ export default function MatchPage() {
             </div>
 
             {/* Chess Board – uses live game FEN when viewing a real game */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-              <div className="max-w-[700px] mx-auto">
+            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+              <div>
                 {showLiveLoading ? (
                   <div className="flex items-center justify-center h-[400px] text-slate-400">
                     Loading game…
@@ -188,7 +188,7 @@ export default function MatchPage() {
                   <span className="text-sm text-slate-400">Viewers</span>
                   <span className="text-sm font-medium text-white flex items-center gap-1">
                     <Users className="w-4 h-4" />
-                    1,21
+                    121
                   </span>
                 </div>
               </div>
