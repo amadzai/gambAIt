@@ -3,3 +3,8 @@
  */
 export { useWallet } from "./useWallet";
 export { useTokenBalance } from "./contracts";
+export {
+  useChessGameLive,
+  type UseChessGameLiveOptions,
+  type UseChessGameLiveResult,
+} from "./useChessGameLive";
