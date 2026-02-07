@@ -61,6 +61,15 @@ export class CreateAgentDto {
   @Min(600)
   @Max(3000)
   elo?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'ERC20 token address associated with this agent (if already deployed)',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  @IsOptional()
+  @IsString()
+  tokenAddress?: string;
 }
 
 export class UpdateAgentDto {
@@ -125,6 +134,14 @@ export class UpdateAgentDto {
   @Min(600)
   @Max(3000)
   elo?: number;
+
+  @ApiPropertyOptional({
+    description: 'ERC20 token address associated with this agent',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  @IsOptional()
+  @IsString()
+  tokenAddress?: string;
 }
 
 export class AgentMoveDto {

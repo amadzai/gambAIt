@@ -35,6 +35,12 @@ export class AgentResponseDto {
   })
   walletAddress?: string | null;
 
+  @ApiPropertyOptional({
+    description: 'ERC20 token address associated with this agent',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  tokenAddress?: string | null;
+
   @ApiProperty({ example: 1000 })
   elo: number;
 

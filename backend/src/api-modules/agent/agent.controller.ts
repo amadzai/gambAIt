@@ -80,10 +80,13 @@ export class AgentController {
     @Param('id') id: string,
     @Body() dto: UpdateAgentDto,
   ): Promise<AgentResponseDto> {
-    return this.agentCrudService.update({
+    const agent = await this.agentCrudService.update({
       where: { id },
       data: dto,
     });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { encryptedPrivateKey: _, ...response } = agent;
+    return response as AgentResponseDto;
   }
 
   @Get()
@@ -94,7 +97,14 @@ export class AgentController {
     type: [AgentResponseDto],
   })
   async list(): Promise<AgentResponseDto[]> {
-    return this.agentCrudService.list({ orderBy: { createdAt: 'desc' } });
+    const agents = await this.agentCrudService.list({
+      orderBy: { createdAt: 'desc' },
+    });
+    return agents.map((agent) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { encryptedPrivateKey: _, ...response } = agent;
+      return response as AgentResponseDto;
+    });
   }
 
   @Get(':id')
@@ -107,7 +117,10 @@ export class AgentController {
   })
   @ApiResponse({ status: 404, description: 'Agent not found' })
   async get(@Param('id') id: string): Promise<AgentResponseDto> {
-    return this.agentCrudService.get({ id });
+    const agent = await this.agentCrudService.get({ id });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { encryptedPrivateKey: _, ...response } = agent;
+    return response as AgentResponseDto;
   }
 
   @Post(':id/move')
