@@ -150,7 +150,6 @@ export class AgentController {
     @Param('id') id: string,
     @Body() dto: ExecuteAgentActionDto,
   ): Promise<ExecuteAgentActionResponseDto> {
-    // Ensure a clean 404 instead of Prisma update errors downstream.
     await this.agentCrudService.get({ id });
 
     const result = await this.goatService.executeAgentAction(
