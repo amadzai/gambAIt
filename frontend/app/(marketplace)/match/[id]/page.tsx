@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, Users, TrendingUp } from "lucide-react";
 import { MatchChessBoard } from "@/components/marketplace/match-chess-board";
 import { EvaluationBar } from "@/components/marketplace/evaluation-bar";
 import { MoveHistoryPanel } from "@/components/marketplace/move-history-panel";
+import { useChessGameLive } from "@/hooks";
 import { mockLiveMatches, mockMatchMoves } from "@/lib/marketplace-mock-data";
 import { DEFAULT_POSITION } from "@/components/arena/chess-board";
 
@@ -17,11 +18,26 @@ export default function MatchPage() {
   const params = useParams();
   const id = params.id as string;
 
+  // Poll game state when id is a real game ID – board updates live
+  const { game: liveGame, status: liveStatus, isLoading: liveLoading, error: liveError } = useChessGameLive(id, {
+    pollIntervalMs: 2000,
+    stopWhenGameOver: true,
+  });
+
+  const useLiveGame = Boolean(liveGame && !liveError);
+  const showLiveLoading = Boolean(id && liveLoading && !liveGame && !liveError);
   const match = mockLiveMatches.find((m) => m.id === id) ?? mockLiveMatches[0];
   const moves = mockMatchMoves;
   const lastMove = moves[moves.length - 1];
   const currentEvaluation = lastMove.evaluation;
-  const currentTurn = lastMove.black ? "white" : "black";
+  const currentTurn = useLiveGame && liveGame
+    ? (liveGame.turn === "WHITE" ? "white" : "black")
+    : (lastMove.black ? "white" : "black");
+
+  const boardPosition = useMemo(() => {
+    if (useLiveGame && liveGame?.fen) return liveGame.fen;
+    return match.position;
+  }, [useLiveGame, liveGame?.fen, match.position]);
 
   const [timeElapsed, setTimeElapsed] = useState("");
 
@@ -118,13 +134,19 @@ export default function MatchPage() {
               </div>
             </div>
 
-            {/* Chess Board */}
+            {/* Chess Board – uses live game FEN when viewing a real game */}
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
               <div className="max-w-[700px] mx-auto">
-                <MatchChessBoard
-                  position={match.position}
-                  defaultPosition={MATCH_PAGE_DEFAULT_POSITION}
-                />
+                {showLiveLoading ? (
+                  <div className="flex items-center justify-center h-[400px] text-slate-400">
+                    Loading game…
+                  </div>
+                ) : (
+                  <MatchChessBoard
+                    position={boardPosition}
+                    defaultPosition={MATCH_PAGE_DEFAULT_POSITION}
+                  />
+                )}
               </div>
             </div>
 

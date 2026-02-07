@@ -7,12 +7,17 @@ export type ChessGameStatus =
   | 'DRAW'
   | 'RESIGNED';
 
+export type ChessWinner = 'WHITE' | 'BLACK' | 'DRAW' | null;
+
 export type ChessGame = {
   id: string;
   fen: string;
   pgn: string;
   turn: ChessColor;
   status: ChessGameStatus;
+  winner?: ChessWinner;
+  whiteAgentId: string;
+  blackAgentId: string;
   createdAt: string; // ISO date string from backend JSON serialization
   updatedAt: string; // ISO date string from backend JSON serialization
 };
@@ -77,5 +82,21 @@ export type EngineMovesQuery = {
   skill?: number;
   movetimeMs?: number;
   depth?: number;
+};
+
+/** Single legal move from GET /chess/games/:id/legal-moves */
+export type LegalMoveResponse = {
+  from: string;
+  to: string;
+  san: string;
+  piece: string;
+  captured?: string;
+  promotion?: string;
+  flags: string;
+};
+
+/** Response from POST /chess/games/:id/validate-move */
+export type ValidateMoveResponse = {
+  valid: boolean;
 };
 
