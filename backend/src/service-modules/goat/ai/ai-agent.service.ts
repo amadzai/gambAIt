@@ -72,7 +72,7 @@ export class AIAgentService {
       const result = await generateText({
         model: this.openrouter.chat(this.defaultModel),
         tools,
-        stopWhen: stepCountIs(5),
+        stopWhen: stepCountIs(20),
         system: systemPrompt ?? defaultSystem,
         prompt: context,
       });
