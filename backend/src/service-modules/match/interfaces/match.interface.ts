@@ -26,7 +26,7 @@ export interface MatchStartRequest {
 export interface MatchMoveEvent {
   /** Chess game ID. */
   gameId: string;
-  /** 1-based move counter. */
+  /** Chess full-move number (1-based). Both white and black share the same number per turn. */
   moveNumber: number;
   /** FEN after the move. */
   fen: string;
@@ -42,6 +42,10 @@ export interface MatchMoveEvent {
   status: GameStatus;
   /** Winner (set on terminal states). */
   winner?: Winner | null;
+  /** Centipawn evaluation of the selected move, normalized to white's perspective. Null if mate. */
+  evalCp: number | null;
+  /** Mate-in-N for the selected move, normalized to white's perspective (positive = white delivers mate). Null if not a mate line. */
+  evalMate: number | null;
   /** Agent that made this move. */
   agentId: string;
   /** Display name of the agent that made this move. */

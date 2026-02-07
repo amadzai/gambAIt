@@ -84,7 +84,7 @@ export class MatchService {
     const movetimeMs = opts.movetimeMs ?? DEFAULT_MOVETIME_MS;
     const delayMs = opts.delayMs ?? DEFAULT_DELAY_MS;
 
-    let moveNumber = 0;
+    let halfMoveCount = 0;
 
     try {
       while (true) {
@@ -97,11 +97,11 @@ export class MatchService {
           break;
         }
 
-        const currentAgentId =
-          game.turn === Color.WHITE ? whiteAgentId : blackAgentId;
+        const isWhiteTurn = game.turn === Color.WHITE;
+        const currentAgentId = isWhiteTurn ? whiteAgentId : blackAgentId;
 
         this.logger.log(
-          `Move #${moveNumber + 1} gameId=${gameId} turn=${game.turn} agentId=${currentAgentId}`,
+          `Half-move #${halfMoveCount + 1} gameId=${gameId} turn=${game.turn} agentId=${currentAgentId}`,
         );
 
         const result = await this.agentService.makeAgentMove(currentAgentId, {
@@ -110,7 +110,27 @@ export class MatchService {
           movetimeMs,
         });
 
-        moveNumber++;
+        halfMoveCount++;
+
+        const moveNumber = Math.ceil(halfMoveCount / 2);
+
+        // Find the selected candidate to extract eval.
+        const selectedCandidate = result.engine.candidates.find(
+          (c) => c.uci === result.selectedUci,
+        );
+
+        // Normalize eval to white's perspective.
+        // Engine scores are from the side-to-move's perspective (before the move).
+        // If white moved, score is already from white's POV. If black moved, negate.
+        const sign = isWhiteTurn ? 1 : -1;
+        const evalCp =
+          selectedCandidate?.scoreCp != null
+            ? selectedCandidate.scoreCp * sign
+            : null;
+        const evalMate =
+          selectedCandidate?.mate != null
+            ? selectedCandidate.mate * sign
+            : null;
 
         const event: MatchMoveEvent = {
           gameId,
@@ -122,6 +142,8 @@ export class MatchService {
           turn: result.moveResult.game.turn,
           status: result.moveResult.game.status,
           winner: result.moveResult.game.winner,
+          evalCp,
+          evalMate,
           agentId: result.agent.id,
           agentName: result.agent.name,
           fallbackUsed: result.fallbackUsed,
@@ -132,7 +154,7 @@ export class MatchService {
         // If the game ended with this move, exit immediately (no delay).
         if (result.moveResult.game.status !== GameStatus.ACTIVE) {
           this.logger.log(
-            `Match ended gameId=${gameId} status=${result.moveResult.game.status} winner=${result.moveResult.game.winner ?? 'none'} moves=${moveNumber}`,
+            `Match ended gameId=${gameId} status=${result.moveResult.game.status} winner=${result.moveResult.game.winner ?? 'none'} halfMoves=${halfMoveCount}`,
           );
           break;
         }
