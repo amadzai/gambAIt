@@ -1,5 +1,6 @@
 import { type Chain, PluginBase } from '@goat-sdk/core';
 import { SwapService } from './swap.service.js';
+import { PositionService } from './position.service.js';
 import { BASE_SEPOLIA_CHAIN_ID } from '../../constants/contracts.js';
 
 export type UniswapV4PluginOptions = {
@@ -12,6 +13,11 @@ export class UniswapV4Plugin extends PluginBase {
   constructor(options: UniswapV4PluginOptions) {
     super('uniswap-v4-base-sepolia', [
       new SwapService(
+        options.hookAddress,
+        options.poolFee,
+        options.tickSpacing,
+      ),
+      new PositionService(
         options.hookAddress,
         options.poolFee,
         options.tickSpacing,
