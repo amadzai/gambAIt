@@ -61,6 +61,7 @@ model Agent {
   walletAddress       String?
   encryptedPrivateKey String?
   tokenAddress        String?
+  creator             String?
 
   whiteGames ChessGame[] @relation("WhiteGames")
   blackGames ChessGame[] @relation("BlackGames")
