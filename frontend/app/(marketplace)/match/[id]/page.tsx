@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { Users, TrendingUp } from "lucide-react";
-import { MarketplaceNav } from "@/components/marketplace/marketplace-nav";
-import { MatchChessBoard } from "@/components/marketplace/match-chess-board";
-import { EvaluationBar } from "@/components/marketplace/evaluation-bar";
-import { MoveHistoryPanel } from "@/components/marketplace/move-history-panel";
-import { useChessGameLive } from "@/hooks";
-import { mockLiveMatches, mockMatchMoves } from "@/lib/marketplace-mock-data";
-import { DEFAULT_POSITION } from "@/components/arena/chess-board";
+import { useMemo } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { Users, TrendingUp } from 'lucide-react';
+import { MarketplaceNav } from '@/components/marketplace/marketplace-nav';
+import { MatchChessBoard } from '@/components/marketplace/match-chess-board';
+import { EvaluationBar } from '@/components/marketplace/evaluation-bar';
+import { MoveHistoryPanel } from '@/components/marketplace/move-history-panel';
+import { useChessGameLive } from '@/hooks';
+import { mockLiveMatches, mockMatchMoves } from '@/lib/marketplace-mock-data';
+import { DEFAULT_POSITION } from '@/components/arena/chess-board';
 
 /** Default board position when no match position is available. */
 const MATCH_PAGE_DEFAULT_POSITION = DEFAULT_POSITION;
@@ -20,7 +20,12 @@ export default function MatchPage() {
   const id = params.id as string;
 
   // Poll game state when id is a real game ID – board updates live
-  const { game: liveGame, status: liveStatus, isLoading: liveLoading, error: liveError } = useChessGameLive(id, {
+  const {
+    game: liveGame,
+    status: liveStatus,
+    isLoading: liveLoading,
+    error: liveError,
+  } = useChessGameLive(id, {
     pollIntervalMs: 2000,
     stopWhenGameOver: true,
   });
@@ -31,9 +36,14 @@ export default function MatchPage() {
   const moves = mockMatchMoves;
   const lastMove = moves[moves.length - 1];
   const currentEvaluation = lastMove.evaluation;
-  const currentTurn = useLiveGame && liveGame
-    ? (liveGame.turn === "WHITE" ? "white" : "black")
-    : (lastMove.black ? "white" : "black");
+  const currentTurn =
+    useLiveGame && liveGame
+      ? liveGame.turn === 'WHITE'
+        ? 'white'
+        : 'black'
+      : lastMove.black
+        ? 'white'
+        : 'black';
 
   const boardPosition = useMemo(() => {
     if (useLiveGame && liveGame?.fen) return liveGame.fen;
@@ -56,9 +66,9 @@ export default function MatchPage() {
             {/* Black Player Info */}
             <div
               className={`bg-slate-900/50 border rounded-xl p-4 transition-all ${
-                currentTurn === "black"
-                  ? "border-green-500 shadow-lg shadow-green-500/20"
-                  : "border-slate-800"
+                currentTurn === 'black'
+                  ? 'border-green-500 shadow-lg shadow-green-500/20'
+                  : 'border-slate-800'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -84,7 +94,7 @@ export default function MatchPage() {
                     </div>
                   </div>
                 </div>
-                {currentTurn === "black" && (
+                {currentTurn === 'black' && (
                   <div className="flex items-center gap-2 text-green-400 animate-pulse">
                     <div className="w-2 h-2 rounded-full bg-green-400" />
                     <span className="text-sm font-medium">Thinking...</span>
@@ -112,9 +122,9 @@ export default function MatchPage() {
             {/* White Player Info */}
             <div
               className={`bg-slate-900/50 border rounded-xl p-4 transition-all ${
-                currentTurn === "white"
-                  ? "border-green-500 shadow-lg shadow-green-500/20"
-                  : "border-slate-800"
+                currentTurn === 'white'
+                  ? 'border-green-500 shadow-lg shadow-green-500/20'
+                  : 'border-slate-800'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -140,7 +150,7 @@ export default function MatchPage() {
                     </div>
                   </div>
                 </div>
-                {currentTurn === "white" && (
+                {currentTurn === 'white' && (
                   <div className="flex items-center gap-2 text-green-400 animate-pulse">
                     <div className="w-2 h-2 rounded-full bg-green-400" />
                     <span className="text-sm font-medium">Thinking...</span>
@@ -165,20 +175,20 @@ export default function MatchPage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Time Control</span>
-                  <span className="text-sm font-medium text-white">10+0</span>
+                  <span className="text-sm text-slate-400">Match Date</span>
+                  {/* TODO: Show Match Date for Past Games, Show Live with Red Dot Icon and red text when Live */}
+                  <span className="text-sm font-medium text-white">LIVE</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Prize Pool</span>
-                  <span className="text-sm font-medium text-green-400">
-                    $1,250
-                  </span>
+                  <span className="text-sm text-slate-400">Match Outcome</span>
+                  {/* Show - if Match is Live, Draw if Draw, or White or Black */}
+                  <span className="text-sm font-medium text-white">White</span>
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t border-slate-800">
                   <span className="text-sm text-slate-400">Viewers</span>
                   <span className="text-sm font-medium text-white flex items-center gap-1">
                     <Users className="w-4 h-4" />
-                    1,234
+                    1,21
                   </span>
                 </div>
               </div>
