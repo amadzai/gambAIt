@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { WalletManagerService } from '../../service-modules/goat/wallet/wallet-manager.service.js';
 import { AgentService } from '../../service-modules/agent-service/providers/agent-chess.service.js';
 import { AgentCrudService } from '../../service-modules/agent-service/providers/agent-crud.service.js';
 import {
@@ -33,6 +34,7 @@ export class AgentController {
   constructor(
     private readonly agentCrudService: AgentCrudService,
     private readonly agentService: AgentService,
+    private readonly walletManager: WalletManagerService,
   ) {}
 
   @Post()
@@ -44,7 +46,19 @@ export class AgentController {
     type: AgentResponseDto,
   })
   async create(@Body() dto: CreateAgentDto): Promise<AgentResponseDto> {
-    return this.agentCrudService.create({ data: dto });
+    const { address: walletAddress, privateKey } =
+      this.walletManager.generateNewKeyPair();
+    const encryptedPrivateKey =
+      this.walletManager.encryptPrivateKey(privateKey);
+    const agent = await this.agentCrudService.create({
+      data: {
+        ...dto,
+        walletAddress,
+        encryptedPrivateKey,
+      },
+    });
+    const { encryptedPrivateKey: _, ...response } = agent;
+    return response as AgentResponseDto;
   }
 
   @Put(':id')
