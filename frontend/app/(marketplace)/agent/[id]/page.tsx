@@ -16,6 +16,7 @@ import {
 import { TradePanel } from '@/components/marketplace/trade-panel';
 import { mockPriceHistory } from '@/lib/marketplace-mock-data';
 import { useAgent, useAgentContract } from '@/hooks';
+import { getOpeningName } from '@/lib/opening-names';
 import type { TradePanelHoldings } from '@/types/marketplace';
 
 /** Default accent colour used when the backend doesn't provide one. */
@@ -100,6 +101,9 @@ export default function AgentDetailPage() {
               <h1 className="text-3xl font-bold text-white mb-2">
                 {agent.name}
               </h1>
+              <h2 className="text-lg text-white mb-2">
+                {getOpeningName(agent.opening ?? undefined)}
+              </h2>
               <p className="text-slate-400 mb-4">{agent.personality ?? ''}</p>
 
               <div className="flex flex-wrap gap-6">
