@@ -16,9 +16,7 @@ export const agentFactoryAbi = [
   {
     type: 'function',
     name: 'getMarketCap',
-    inputs: [
-      { name: 'agentToken', type: 'address', internalType: 'address' },
-    ],
+    inputs: [{ name: 'agentToken', type: 'address', internalType: 'address' }],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },

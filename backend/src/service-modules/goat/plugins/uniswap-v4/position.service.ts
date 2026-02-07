@@ -222,10 +222,7 @@ export class PositionService {
         { type: 'address', name: 'currency0' },
         { type: 'address', name: 'currency1' },
       ],
-      [
-        poolKey.currency0 as `0x${string}`,
-        poolKey.currency1 as `0x${string}`,
-      ],
+      [poolKey.currency0 as `0x${string}`, poolKey.currency1 as `0x${string}`],
     );
 
     const unlockData = this.encodeUnlockData(
@@ -273,10 +270,7 @@ export class PositionService {
         { type: 'address', name: 'currency0' },
         { type: 'address', name: 'currency1' },
       ],
-      [
-        poolKey.currency0 as `0x${string}`,
-        poolKey.currency1 as `0x${string}`,
-      ],
+      [poolKey.currency0 as `0x${string}`, poolKey.currency1 as `0x${string}`],
     );
 
     const unlockData = this.encodeUnlockData(

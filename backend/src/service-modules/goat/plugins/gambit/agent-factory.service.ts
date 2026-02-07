@@ -31,7 +31,7 @@ export class AgentFactoryService {
       args: [
         parameters.name,
         parameters.symbol,
-        BigInt(parameters.usdcAmount),
+        BigInt(String(parameters.usdcAmount)),
         parameters.agentWallet,
       ],
     });
@@ -87,8 +87,8 @@ export class AgentFactoryService {
       functionName: 'getAgentInfo',
       args: [parameters.tokenAddress],
     });
-    return JSON.stringify(result.value, (_key, value) =>
-      typeof value === 'bigint' ? value.toString() : value,
-    );
+    const replacer = (_key: string, value: unknown): unknown =>
+      typeof value === 'bigint' ? value.toString() : value;
+    return JSON.stringify(result.value, replacer);
   }
 }

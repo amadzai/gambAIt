@@ -11,7 +11,13 @@ import { BigIntSerializerInterceptor } from './interceptors/big-int-serializer.i
 import { GoatServiceModule } from './service-modules/goat/goat.module.js';
 
 @Module({
-  imports: [PrismaModule, ChessModule, AgentModule, MatchModule, GoatServiceModule],
+  imports: [
+    PrismaModule,
+    ChessModule,
+    AgentModule,
+    MatchModule,
+    GoatServiceModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,

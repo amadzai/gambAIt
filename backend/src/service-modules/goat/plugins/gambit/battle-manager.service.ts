@@ -11,6 +11,7 @@ import {
   GetAgentStatsParams,
   EmptyParams,
 } from './parameters.js';
+import { Abi } from 'viem';
 
 export class BattleManagerService {
   private contractAddress: `0x${string}`;
@@ -29,12 +30,12 @@ export class BattleManagerService {
   ): Promise<string> {
     const { hash } = await walletClient.sendTransaction({
       to: this.contractAddress,
-      abi: battleManagerAbi as any,
+      abi: battleManagerAbi as Abi,
       functionName: 'challengeAgent',
       args: [
         parameters.agent1Token,
         parameters.agent2Token,
-        BigInt(parameters.stakeAmount),
+        BigInt(String(parameters.stakeAmount)),
       ],
     });
     return `Challenge created. Transaction hash: ${hash}`;
@@ -49,9 +50,9 @@ export class BattleManagerService {
   ): Promise<string> {
     const { hash } = await walletClient.sendTransaction({
       to: this.contractAddress,
-      abi: battleManagerAbi as any,
+      abi: battleManagerAbi as Abi,
       functionName: 'acceptChallenge',
-      args: [parameters.matchId, BigInt(parameters.stakeAmount)],
+      args: [parameters.matchId, BigInt(String(parameters.stakeAmount))],
     });
     return `Challenge accepted. Transaction hash: ${hash}`;
   }
@@ -65,7 +66,7 @@ export class BattleManagerService {
   ): Promise<string> {
     const { hash } = await walletClient.sendTransaction({
       to: this.contractAddress,
-      abi: battleManagerAbi as any,
+      abi: battleManagerAbi as Abi,
       functionName: 'declineChallenge',
       args: [parameters.matchId],
     });
@@ -82,7 +83,7 @@ export class BattleManagerService {
   ): Promise<string> {
     const { hash } = await walletClient.sendTransaction({
       to: this.contractAddress,
-      abi: battleManagerAbi as any,
+      abi: battleManagerAbi as Abi,
       functionName: 'settleMatch',
       args: [parameters.matchId, parameters.winner, parameters.signature],
     });
@@ -99,7 +100,7 @@ export class BattleManagerService {
   ): Promise<string> {
     const { hash } = await walletClient.sendTransaction({
       to: this.contractAddress,
-      abi: battleManagerAbi as any,
+      abi: battleManagerAbi as Abi,
       functionName: 'cancelExpiredMatch',
       args: [parameters.matchId],
     });
@@ -116,13 +117,13 @@ export class BattleManagerService {
   ): Promise<string> {
     const result = await walletClient.read({
       address: this.contractAddress,
-      abi: battleManagerAbi as any,
+      abi: battleManagerAbi as Abi,
       functionName: 'getMatch',
       args: [parameters.matchId],
     });
-    return JSON.stringify(result.value, (_key, value) =>
-      typeof value === 'bigint' ? value.toString() : value,
-    );
+    const replacer = (_key: string, value: unknown): unknown =>
+      typeof value === 'bigint' ? value.toString() : value;
+    return JSON.stringify(result.value, replacer);
   }
 
   @Tool({
@@ -135,7 +136,7 @@ export class BattleManagerService {
     void parameters;
     const result = await walletClient.read({
       address: this.contractAddress,
-      abi: battleManagerAbi as any,
+      abi: battleManagerAbi as Abi,
       functionName: 'getAllMatches',
     });
     const matches = result.value as string[];
@@ -152,13 +153,12 @@ export class BattleManagerService {
   ): Promise<string> {
     const result = await walletClient.read({
       address: this.contractAddress,
-      abi: battleManagerAbi as any,
+      abi: battleManagerAbi as Abi,
       functionName: 'getAgentStats',
       args: [parameters.agentToken],
     });
-    return JSON.stringify(result.value, (_key, value) =>
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      typeof value === 'bigint' ? value.toString() : value,
-    );
+    const replacer = (_key: string, value: unknown): unknown =>
+      typeof value === 'bigint' ? value.toString() : value;
+    return JSON.stringify(result.value, replacer);
   }
 }

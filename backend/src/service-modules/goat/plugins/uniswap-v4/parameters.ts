@@ -39,9 +39,7 @@ export class GetPositionInfoParams extends toolParams(
 
 export class IncreaseLiquidityParams extends toolParams(
   z.object({
-    tokenId: z
-      .string()
-      .describe('The NFT token ID of the LP position'),
+    tokenId: z.string().describe('The NFT token ID of the LP position'),
     amount0Desired: z
       .string()
       .describe('Desired amount of token0 to add (in base units)'),
@@ -63,12 +61,8 @@ export class IncreaseLiquidityParams extends toolParams(
 
 export class DecreaseLiquidityParams extends toolParams(
   z.object({
-    tokenId: z
-      .string()
-      .describe('The NFT token ID of the LP position'),
-    liquidityAmount: z
-      .string()
-      .describe('Amount of liquidity to remove'),
+    tokenId: z.string().describe('The NFT token ID of the LP position'),
+    liquidityAmount: z.string().describe('Amount of liquidity to remove'),
     amount0Min: z
       .string()
       .describe(

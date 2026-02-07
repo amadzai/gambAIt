@@ -12,9 +12,7 @@ export const positionManagerAbi = [
   {
     type: 'function',
     name: 'getPositionInfo',
-    inputs: [
-      { name: 'tokenId', type: 'uint256', internalType: 'uint256' },
-    ],
+    inputs: [{ name: 'tokenId', type: 'uint256', internalType: 'uint256' }],
     outputs: [
       {
         name: 'poolKey',

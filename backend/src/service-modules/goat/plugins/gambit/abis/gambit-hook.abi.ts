@@ -2,9 +2,7 @@ export const gambitHookAbi = [
   {
     type: 'function',
     name: 'claim',
-    inputs: [
-      { name: 'currency', type: 'address', internalType: 'Currency' },
-    ],
+    inputs: [{ name: 'currency', type: 'address', internalType: 'Currency' }],
     outputs: [],
     stateMutability: 'nonpayable',
   },
