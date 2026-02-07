@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Sparkles, ChevronDown } from 'lucide-react';
 import axios from 'axios';
+import { toast } from 'sonner';
 import { useWriteContract, usePublicClient } from 'wagmi';
 import { baseSepolia } from 'wagmi/chains';
 import type { AgentPlaystyle, Agent } from '@/types/agent';
@@ -10,6 +11,7 @@ import { apiService } from '@/utils/apiService';
 import { useWallet } from '@/hooks/useWallet';
 import { agentFactoryAbi, usdcAbi } from '@/lib/contracts/abis';
 import { getAgentFactoryAddress, getUsdcAddress } from '@/lib/contracts/config';
+import { maxUint256 } from 'viem';
 
 export interface CreateAgentDialogProps {
   open: boolean;
@@ -31,7 +33,7 @@ const SAN_OPENINGS = ['e4', 'd4', 'c4', 'Nf3', 'g3', 'b3', 'f4'] as const;
 
 const DEFAULT_PLAYSTYLE: AgentPlaystyle = 'AGGRESSIVE';
 
-const USDC_AMOUNT = BigInt(100_000_000); // 100 USDC (6 decimals)
+const USDC_AMOUNT = BigInt(1_000_000_000); // 100 USDC (6 decimals)
 
 function deriveSymbol(name: string): string {
   return name.trim().split(/\s+/)[0].toUpperCase().slice(0, 6);
@@ -81,7 +83,9 @@ export function CreateAgentDialog({
     }
 
     if (!publicClient) {
-      setError('Wallet not connected. Please connect your wallet.');
+      const msg = 'Wallet not connected. Please connect your wallet.';
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -102,7 +106,10 @@ export function CreateAgentDialog({
 
       const agentWalletAddress = agent.walletAddress;
       if (!agentWalletAddress) {
-        setError('Agent created but no wallet address assigned. Please contact support.');
+        const msg =
+          'Agent created but no wallet address assigned. Please contact support.';
+        setError(msg);
+        toast.error(msg);
         setIsSubmitting(false);
         return;
       }
@@ -119,7 +126,7 @@ export function CreateAgentDialog({
         address: usdcAddress,
         abi: usdcAbi,
         functionName: 'approve',
-        args: [factoryAddress, USDC_AMOUNT],
+        args: [factoryAddress, maxUint256],
         chainId: baseSepolia.id,
       });
 
@@ -142,17 +149,21 @@ export function CreateAgentDialog({
       const updatedAgent = await apiService.agent.registerToken(agent.id, createHash);
 
       onCreated?.(updatedAgent);
+      toast.success('Agent created and deployed on-chain.');
       resetForm();
       onClose();
     } catch (err: unknown) {
+      let message: string;
       if (axios.isAxiosError(err)) {
-        const message = err.response?.data?.message ?? err.message;
-        setError(Array.isArray(message) ? message.join(', ') : message);
+        const raw = err.response?.data?.message ?? err.message;
+        message = Array.isArray(raw) ? raw.join(', ') : raw;
       } else if (err instanceof Error) {
-        setError(err.message);
+        message = err.message;
       } else {
-        setError('Failed to create agent. Please try again.');
+        message = 'Failed to create agent. Please try again.';
       }
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
       setStatusText('');

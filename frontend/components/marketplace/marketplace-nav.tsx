@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
+import { toast } from 'sonner';
 import { useConnection, useReadContract, useWriteContract } from 'wagmi';
 import { Plus, Droplets, LogOut, Loader2 } from 'lucide-react';
 import { CreateAgentDialog } from '@/components/marketplace/create-agent-dialog';
@@ -82,10 +83,13 @@ export function MarketplaceNav() {
         abi: erc20Abi as readonly unknown[],
         functionName: 'faucet',
         args: [FAUCET_AMOUNT],
+        chainId: baseSepolia.id,
       });
       await refetchUsdc();
-    } catch {
-      // Error surfaced by wagmi / wallet
+      toast.success('USDC received.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Faucet request failed.';
+      toast.error(message);
     }
   };
 
