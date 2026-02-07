@@ -9,6 +9,7 @@ import {
   CancelExpiredMatchParams,
   GetMatchParams,
   GetAgentStatsParams,
+  EmptyParams,
 } from './parameters.js';
 
 export class BattleManagerService {
@@ -127,7 +128,11 @@ export class BattleManagerService {
   @Tool({
     description: 'Get all match IDs from the BattleManager contract',
   })
-  async getAllMatches(walletClient: EVMWalletClient): Promise<string> {
+  async getAllMatches(
+    walletClient: EVMWalletClient,
+    parameters: EmptyParams,
+  ): Promise<string> {
+    void parameters;
     const result = await walletClient.read({
       address: this.contractAddress,
       abi: battleManagerAbi as any,
@@ -152,6 +157,7 @@ export class BattleManagerService {
       args: [parameters.agentToken],
     });
     return JSON.stringify(result.value, (_key, value) =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       typeof value === 'bigint' ? value.toString() : value,
     );
   }

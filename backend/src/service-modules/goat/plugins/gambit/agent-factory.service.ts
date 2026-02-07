@@ -5,6 +5,7 @@ import {
   CreateAgentParams,
   GetMarketCapParams,
   GetAgentInfoParams,
+  EmptyParams,
 } from './parameters.js';
 import { Abi } from 'viem';
 
@@ -58,7 +59,11 @@ export class AgentFactoryService {
     description:
       'Get all agent token addresses created through the AgentFactory',
   })
-  async getAllAgents(walletClient: EVMWalletClient): Promise<string> {
+  async getAllAgents(
+    walletClient: EVMWalletClient,
+    parameters: EmptyParams,
+  ): Promise<string> {
+    void parameters;
     const result = await walletClient.read({
       address: this.contractAddress,
       abi: agentFactoryAbi as Abi,

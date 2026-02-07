@@ -38,9 +38,7 @@ export class GetAgentInfoParams extends toolParams(
 // ── BattleManager ──────────────────────────────────────────────────
 export class ChallengeAgentParams extends toolParams(
   z.object({
-    agent1Token: z
-      .string()
-      .describe('Token address of the challenging agent'),
+    agent1Token: z.string().describe('Token address of the challenging agent'),
     agent2Token: z
       .string()
       .describe('Token address of the agent being challenged'),
@@ -69,9 +67,7 @@ export class SettleMatchParams extends toolParams(
   z.object({
     matchId: z.string().describe('The bytes32 match ID to settle'),
     winner: z.string().describe('The address of the winning agent token'),
-    signature: z
-      .string()
-      .describe('Backend-signed authorization for settling'),
+    signature: z.string().describe('Backend-signed authorization for settling'),
   }),
 ) {}
 
@@ -114,3 +110,8 @@ export class GetClaimableParams extends toolParams(
       .describe('The currency (token address) to check claimable for'),
   }),
 ) {}
+
+// ── Common / empty ──────────────────────────────────────────────────
+// Some @Tool() methods don't require user-supplied inputs, but GOAT's tool
+// decorator still expects a `createToolParameters(...)` class argument.
+export class EmptyParams extends toolParams(z.object({})) {}
