@@ -20,7 +20,7 @@ import "./AgentFactory.sol";
 /**
  * @title BattleManager
  * @notice Manages chess battles between AI agents with LP stake transfers
- * @dev Verifies backend signatures, locks stakes, and settles matches
+ * @dev Challenge/accept flow: agents choose their own stake amounts
  */
 contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
     using ECDSA for bytes32;
@@ -37,9 +37,6 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
 
     /// @notice Backend wallet authorized to sign match results
     address public resultSigner;
-
-    /// @notice Percentage of LP to stake in battles (basis points, 1000 = 10%)
-    uint256 public constant STAKE_PERCENTAGE = 1000;
 
     /// @notice Minimum liquidity floor that an agent must retain
     uint128 public constant MIN_LIQUIDITY_FLOOR = 1e15;
@@ -74,6 +71,9 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
         address agent1;
         address agent2;
         address winner;
+        uint128 agent1Stake;
+        uint128 agent2Stake;
+        bool agent2Accepted;
         MatchStatus status;
         uint256 createdAt;
         uint256 settledAt;
@@ -88,10 +88,18 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
     /// @notice Array of all match IDs
     bytes32[] public allMatches;
 
-    event MatchRegistered(
+    event ChallengeCreated(
         bytes32 indexed matchId,
         address indexed agent1,
         address indexed agent2,
+        uint128 agent1Stake,
+        uint256 timestamp
+    );
+
+    event ChallengeAccepted(
+        bytes32 indexed matchId,
+        address indexed agent2,
+        uint128 agent2Stake,
         uint256 timestamp
     );
 
@@ -114,10 +122,15 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
     error MatchAlreadyExists();
     error MatchNotFound();
     error MatchAlreadySettled();
+    error MatchNotPending();
+    error MatchNotInProgress();
     error InvalidSignature();
     error SignatureAlreadyUsed();
     error InvalidWinner();
-    error OnlyResultSigner();
+    error NotAgentWallet();
+    error InvalidStake();
+    error InsufficientLiquidity();
+    error SameAgent();
 
     /**
      * @notice Deploy BattleManager
@@ -144,54 +157,136 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
     }
 
     /**
-     * @notice Register a new match between two agents
-     * @param agent1 Address of first agent token
-     * @param agent2 Address of second agent token
+     * @notice Challenge another agent to a battle
+     * @param agent1Token Address of challenger's agent token
+     * @param agent2Token Address of opponent's agent token
+     * @param stakeAmount Amount of liquidity the challenger is staking
      * @return matchId Unique identifier for the match
      */
-    function registerMatch(
-        address agent1,
-        address agent2
+    function challengeAgent(
+        address agent1Token,
+        address agent2Token,
+        uint128 stakeAmount
     ) external nonReentrant returns (bytes32 matchId) {
-        // Verify both agents exist
-        AgentFactory.AgentInfo memory info1 = agentFactory.getAgentInfo(agent1);
-        AgentFactory.AgentInfo memory info2 = agentFactory.getAgentInfo(agent2);
+        if (agent1Token == agent2Token) revert SameAgent();
+        if (stakeAmount == 0) revert InvalidStake();
+
+        AgentFactory.AgentInfo memory info1 = agentFactory.getAgentInfo(agent1Token);
+        AgentFactory.AgentInfo memory info2 = agentFactory.getAgentInfo(agent2Token);
 
         if (!info1.exists || !info2.exists) revert InvalidAgent();
-        if (agent1 == agent2) revert InvalidAgent();
+        if (msg.sender != info1.agentWallet) revert NotAgentWallet();
 
-        // Check cooldown periods
-        require(block.timestamp >= lastMatchTimestamp[agent1] + MATCH_COOLDOWN, "Agent1 cooldown");
-        require(block.timestamp >= lastMatchTimestamp[agent2] + MATCH_COOLDOWN, "Agent2 cooldown");
-        lastMatchTimestamp[agent1] = block.timestamp;
-        lastMatchTimestamp[agent2] = block.timestamp;
+        // Check cooldown
+        require(block.timestamp >= lastMatchTimestamp[agent1Token] + MATCH_COOLDOWN, "Agent1 cooldown");
+        lastMatchTimestamp[agent1Token] = block.timestamp;
+
+        // Verify agent1 has enough liquidity to stake
+        uint128 agent1Liquidity = positionManager.getPositionLiquidity(info1.agentPositionId);
+        if (agent1Liquidity < stakeAmount + MIN_LIQUIDITY_FLOOR) revert InsufficientLiquidity();
 
         // Generate unique match ID
         matchId = keccak256(abi.encodePacked(
-            agent1,
-            agent2,
+            agent1Token,
+            agent2Token,
             block.timestamp,
             block.number
         ));
 
-        if (matches[matchId].status != MatchStatus.Pending) {
+        if (matches[matchId].createdAt != 0) {
             revert MatchAlreadyExists();
         }
+
+        // Transfer agent1's LP NFT to BattleManager (escrow)
+        IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), info1.agentPositionId);
 
         // Create match record
         matches[matchId] = Match({
             matchId: matchId,
-            agent1: agent1,
-            agent2: agent2,
+            agent1: agent1Token,
+            agent2: agent2Token,
             winner: address(0),
-            status: MatchStatus.InProgress,
+            agent1Stake: stakeAmount,
+            agent2Stake: 0,
+            agent2Accepted: false,
+            status: MatchStatus.Pending,
             createdAt: block.timestamp,
             settledAt: 0
         });
 
         allMatches.push(matchId);
 
-        emit MatchRegistered(matchId, agent1, agent2, block.timestamp);
+        emit ChallengeCreated(matchId, agent1Token, agent2Token, stakeAmount, block.timestamp);
+    }
+
+    /**
+     * @notice Accept a challenge from another agent
+     * @param matchId Match identifier
+     * @param stakeAmount Amount of liquidity the acceptor is staking
+     */
+    function acceptChallenge(
+        bytes32 matchId,
+        uint128 stakeAmount
+    ) external nonReentrant {
+        Match storage matchData = matches[matchId];
+
+        if (matchData.createdAt == 0) revert MatchNotFound();
+        if (matchData.status != MatchStatus.Pending) revert MatchNotPending();
+        if (stakeAmount == 0) revert InvalidStake();
+
+        // Check timeout
+        require(block.timestamp <= matchData.createdAt + MATCH_TIMEOUT, "Challenge expired");
+
+        AgentFactory.AgentInfo memory info2 = agentFactory.getAgentInfo(matchData.agent2);
+        if (msg.sender != info2.agentWallet) revert NotAgentWallet();
+
+        // Check cooldown
+        require(block.timestamp >= lastMatchTimestamp[matchData.agent2] + MATCH_COOLDOWN, "Agent2 cooldown");
+        lastMatchTimestamp[matchData.agent2] = block.timestamp;
+
+        // Verify agent2 has enough liquidity to stake
+        uint128 agent2Liquidity = positionManager.getPositionLiquidity(info2.agentPositionId);
+        if (agent2Liquidity < stakeAmount + MIN_LIQUIDITY_FLOOR) revert InsufficientLiquidity();
+
+        // Transfer agent2's LP NFT to BattleManager (escrow)
+        IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), info2.agentPositionId);
+
+        // Update match
+        matchData.agent2Stake = stakeAmount;
+        matchData.agent2Accepted = true;
+        matchData.status = MatchStatus.InProgress;
+
+        emit ChallengeAccepted(matchId, matchData.agent2, stakeAmount, block.timestamp);
+    }
+
+    /**
+     * @notice Decline or cancel a pending challenge
+     * @param matchId Match identifier
+     */
+    function declineChallenge(bytes32 matchId) external nonReentrant {
+        Match storage matchData = matches[matchId];
+
+        if (matchData.createdAt == 0) revert MatchNotFound();
+        if (matchData.status != MatchStatus.Pending) revert MatchNotPending();
+
+        AgentFactory.AgentInfo memory info1 = agentFactory.getAgentInfo(matchData.agent1);
+        AgentFactory.AgentInfo memory info2 = agentFactory.getAgentInfo(matchData.agent2);
+
+        // Either agent's wallet or the result signer can decline
+        require(
+            msg.sender == info1.agentWallet ||
+            msg.sender == info2.agentWallet ||
+            msg.sender == resultSigner,
+            "Not authorized"
+        );
+
+        // Return agent1's escrowed LP NFT
+        IERC721(address(positionManager)).safeTransferFrom(address(this), info1.agentWallet, info1.agentPositionId);
+
+        matchData.status = MatchStatus.Cancelled;
+        matchData.settledAt = block.timestamp;
+
+        emit MatchCancelled(matchId, block.timestamp);
     }
 
     /**
@@ -207,8 +302,8 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
     ) external nonReentrant {
         Match storage matchData = matches[matchId];
 
-        if (matchData.status == MatchStatus.Pending) revert MatchNotFound();
-        if (matchData.status == MatchStatus.Completed) revert MatchAlreadySettled();
+        if (matchData.createdAt == 0) revert MatchNotFound();
+        if (matchData.status != MatchStatus.InProgress) revert MatchNotInProgress();
         if (winner != matchData.agent1 && winner != matchData.agent2) revert InvalidWinner();
 
         // Check timeout
@@ -234,9 +329,13 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
 
         // Determine loser
         address loser = (winner == matchData.agent1) ? matchData.agent2 : matchData.agent1;
+        uint128 loserStake = (loser == matchData.agent1) ? matchData.agent1Stake : matchData.agent2Stake;
 
         // Execute LP transfer from loser to winner
-        _transferLPStake(loser, winner);
+        _transferLPStake(loser, winner, loserStake);
+
+        // Return LP NFTs to their respective agent wallets
+        _returnLPNFTs(matchData.agent1, matchData.agent2);
 
         // Update agent stats
         agentStats[winner].wins++;
@@ -253,7 +352,7 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
     }
 
     /**
-     * @notice Cancel a match with backend signature
+     * @notice Cancel a match with backend signature (for in-progress matches)
      * @param matchId Match identifier
      * @param signature Backend signature authorizing cancellation
      */
@@ -263,8 +362,10 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
     ) external nonReentrant {
         Match storage matchData = matches[matchId];
 
-        if (matchData.status == MatchStatus.Pending) revert MatchNotFound();
-        if (matchData.status == MatchStatus.Completed) revert MatchAlreadySettled();
+        if (matchData.createdAt == 0) revert MatchNotFound();
+        if (matchData.status == MatchStatus.Completed || matchData.status == MatchStatus.Cancelled) {
+            revert MatchAlreadySettled();
+        }
 
         // Verify signature
         bytes32 messageHash = keccak256(abi.encodePacked(
@@ -283,6 +384,9 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
 
         // Mark signature as used
         usedSignatures[ethSignedMessageHash] = true;
+
+        // Return escrowed LP NFTs
+        _returnEscrowedNFTs(matchData);
 
         // Update match status
         matchData.status = MatchStatus.Cancelled;
@@ -309,13 +413,20 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
     }
 
     /**
-     * @notice Cancel an expired match
+     * @notice Cancel an expired match (anyone can call)
      * @param matchId Match identifier
      */
-    function cancelExpiredMatch(bytes32 matchId) external {
+    function cancelExpiredMatch(bytes32 matchId) external nonReentrant {
         Match storage matchData = matches[matchId];
-        require(matchData.status == MatchStatus.InProgress, "Not in progress");
+        require(
+            matchData.status == MatchStatus.InProgress || matchData.status == MatchStatus.Pending,
+            "Not active"
+        );
         require(block.timestamp > matchData.createdAt + MATCH_TIMEOUT, "Not expired");
+
+        // Return escrowed LP NFTs
+        _returnEscrowedNFTs(matchData);
+
         matchData.status = MatchStatus.Cancelled;
         matchData.settledAt = block.timestamp;
         emit MatchCancelled(matchId, block.timestamp);
@@ -365,31 +476,62 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
     // Internal functions
 
     /**
+     * @notice Return escrowed LP NFTs based on match state
+     */
+    function _returnEscrowedNFTs(Match storage matchData) internal {
+        AgentFactory.AgentInfo memory info1 = agentFactory.getAgentInfo(matchData.agent1);
+
+        // Agent1's NFT is always escrowed (they initiated the challenge)
+        IERC721(address(positionManager)).safeTransferFrom(
+            address(this), info1.agentWallet, info1.agentPositionId
+        );
+
+        // Agent2's NFT is only escrowed if they accepted
+        if (matchData.agent2Accepted) {
+            AgentFactory.AgentInfo memory info2 = agentFactory.getAgentInfo(matchData.agent2);
+            IERC721(address(positionManager)).safeTransferFrom(
+                address(this), info2.agentWallet, info2.agentPositionId
+            );
+        }
+    }
+
+    /**
+     * @notice Return both LP NFTs to their respective agent wallets
+     */
+    function _returnLPNFTs(address agent1Token, address agent2Token) internal {
+        AgentFactory.AgentInfo memory info1 = agentFactory.getAgentInfo(agent1Token);
+        AgentFactory.AgentInfo memory info2 = agentFactory.getAgentInfo(agent2Token);
+
+        IERC721(address(positionManager)).safeTransferFrom(
+            address(this), info1.agentWallet, info1.agentPositionId
+        );
+        IERC721(address(positionManager)).safeTransferFrom(
+            address(this), info2.agentWallet, info2.agentPositionId
+        );
+    }
+
+    /**
      * @notice Transfer LP stake from loser to winner
      * @param loser Address of losing agent token
      * @param winner Address of winning agent token
+     * @param stakeAmount Amount of liquidity to transfer from loser
      */
-    function _transferLPStake(address loser, address winner) internal {
+    function _transferLPStake(address loser, address winner, uint128 stakeAmount) internal {
         AgentFactory.AgentInfo memory loserInfo = agentFactory.getAgentInfo(loser);
         AgentFactory.AgentInfo memory winnerInfo = agentFactory.getAgentInfo(winner);
-        uint256 loserPositionId = loserInfo.positionId;
-        uint256 winnerPositionId = winnerInfo.positionId;
+        uint256 loserPositionId = loserInfo.agentPositionId;
+        uint256 winnerPositionId = winnerInfo.agentPositionId;
 
-        // 1. Request NFT transfer from factory (if factory still holds it)
-        _ensurePositionOwnership(loserPositionId);
-        _ensurePositionOwnership(winnerPositionId);
-
-        // 2. Get loser's current liquidity
+        // Get loser's current liquidity and enforce minimum floor
         uint128 loserLiquidity = positionManager.getPositionLiquidity(loserPositionId);
-        uint128 stakeAmount = uint128(uint256(loserLiquidity) * STAKE_PERCENTAGE / 10000);
+        uint128 actualStake = stakeAmount;
 
-        // 3. Enforce minimum liquidity floor
-        if (loserLiquidity - stakeAmount < MIN_LIQUIDITY_FLOOR) {
+        if (loserLiquidity - actualStake < MIN_LIQUIDITY_FLOOR) {
             if (loserLiquidity <= MIN_LIQUIDITY_FLOOR) return; // Can't stake anything
-            stakeAmount = loserLiquidity - MIN_LIQUIDITY_FLOOR;
+            actualStake = loserLiquidity - MIN_LIQUIDITY_FLOOR;
         }
 
-        // 4. Decrease loser's liquidity → tokens come to BattleManager
+        // Decrease loser's liquidity → tokens come to BattleManager
         PoolKey memory loserPoolKey = agentFactory._createPoolKey(loser);
         {
             bytes memory actions = abi.encodePacked(
@@ -397,12 +539,12 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
                 uint8(Actions.TAKE_PAIR)
             );
             bytes[] memory params = new bytes[](2);
-            params[0] = abi.encode(loserPositionId, stakeAmount, 0, 0, "");
+            params[0] = abi.encode(loserPositionId, actualStake, 0, 0, "");
             params[1] = abi.encode(loserPoolKey.currency0, loserPoolKey.currency1, address(this));
             positionManager.modifyLiquidities(abi.encode(actions, params), block.timestamp + 60);
         }
 
-        // 5. Swap loser agent tokens → USDC using SWAP_EXACT_IN_SINGLE
+        // Swap loser agent tokens → USDC
         uint256 loserTokenBalance = IERC20(loser).balanceOf(address(this));
         if (loserTokenBalance > 0) {
             IERC20(loser).approve(address(positionManager), loserTokenBalance);
@@ -420,15 +562,14 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
                 0,   // amountOutMin (hackathon: 0, production: add slippage)
                 ""   // hookData
             );
-            // Settle the input currency
             Currency inputCurrency = zeroForOne ? loserPoolKey.currency0 : loserPoolKey.currency1;
             Currency outputCurrency = zeroForOne ? loserPoolKey.currency1 : loserPoolKey.currency0;
             swapParams[1] = abi.encode(inputCurrency, loserTokenBalance, false);
-            swapParams[2] = abi.encode(outputCurrency, address(this), 0); // OPEN_DELTA
+            swapParams[2] = abi.encode(outputCurrency, address(this), 0);
             positionManager.modifyLiquidities(abi.encode(swapActions, swapParams), block.timestamp + 60);
         }
 
-        // 6. Increase winner's liquidity with collected USDC
+        // Increase winner's liquidity with collected USDC
         uint256 usdcBalance = IERC20(address(agentFactory.usdc())).balanceOf(address(this));
         if (usdcBalance > 0) {
             IERC20(address(agentFactory.usdc())).approve(address(positionManager), usdcBalance);
@@ -441,41 +582,14 @@ contract BattleManager is ReentrancyGuard, Ownable, IERC721Receiver {
             bytes[] memory increaseParams = new bytes[](3);
             increaseParams[0] = abi.encode(
                 winnerPositionId,
-                usdcBalance,          // liquidityDelta (approximate)
-                type(uint128).max,    // amount0Max
-                type(uint128).max,    // amount1Max
-                ""                    // hookData
+                usdcBalance,
+                type(uint128).max,
+                type(uint128).max,
+                ""
             );
             increaseParams[1] = abi.encode(winnerPoolKey.currency0);
             increaseParams[2] = abi.encode(winnerPoolKey.currency1);
             positionManager.modifyLiquidities(abi.encode(increaseActions, increaseParams), block.timestamp + 60);
         }
-    }
-
-    /**
-     * @notice Ensure BattleManager owns a position NFT
-     * @param positionId Position NFT ID
-     */
-    function _ensurePositionOwnership(uint256 positionId) internal {
-        address currentOwner = IERC721(address(positionManager)).ownerOf(positionId);
-        if (currentOwner == address(agentFactory)) {
-            agentFactory.transferPositionToBattleManager(positionId);
-        }
-        // If already owned by BattleManager, no action needed
-    }
-
-    /**
-     * @notice Verify a signature is from the result signer
-     * @param messageHash Hash of the message
-     * @param signature Signature to verify
-     * @return True if signature is valid
-     */
-    function _verifySignature(
-        bytes32 messageHash,
-        bytes calldata signature
-    ) internal view returns (bool) {
-        bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
-        address signer = ethSignedMessageHash.recover(signature);
-        return signer == resultSigner;
     }
 }

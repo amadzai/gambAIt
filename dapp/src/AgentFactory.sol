@@ -46,11 +46,11 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
     /// @notice Fee to create an agent (in USDC, 6 decimals)
     uint256 public creationFee;
 
-    /// @notice Percentage of tokens going to LP (basis points, 8000 = 80%)
-    uint256 public constant LP_PERCENTAGE = 8000;
+    /// @notice Percentage of tokens/USDC going to user LP (basis points, 5000 = 50%)
+    uint256 public constant USER_LP_PERCENTAGE = 5000;
 
-    /// @notice Percentage of tokens going to creator (basis points, 2000 = 20%)
-    uint256 public constant CREATOR_PERCENTAGE = 2000;
+    /// @notice Percentage of tokens/USDC going to agent LP (basis points, 5000 = 50%)
+    uint256 public constant AGENT_LP_PERCENTAGE = 5000;
 
     /// @notice Uniswap V4 pool fee (3000 = 0.3%)
     uint24 public constant POOL_FEE = 3000;
@@ -63,7 +63,9 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
         string name;
         string symbol;
         address creator;
-        uint256 positionId;
+        address agentWallet;
+        uint256 userPositionId;
+        uint256 agentPositionId;
         uint256 createdAt;
         bool exists;
     }
@@ -82,7 +84,9 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
         string name,
         string symbol,
         address indexed creator,
-        uint256 positionId,
+        address indexed agentWallet,
+        uint256 userPositionId,
+        uint256 agentPositionId,
         uint256 usdcAmount
     );
 
@@ -125,14 +129,17 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
      * @param name Token name
      * @param symbol Token symbol
      * @param usdcAmount Amount of USDC to seed liquidity pool
+     * @param agentWallet The agent's EOA address that will hold the agent LP position
      * @return tokenAddress Address of newly created agent token
      */
     function createAgent(
         string calldata name,
         string calldata symbol,
-        uint256 usdcAmount
+        uint256 usdcAmount,
+        address agentWallet
     ) external nonReentrant returns (address tokenAddress) {
         if (usdcAmount < creationFee) revert InsufficientUSDC();
+        if (agentWallet == address(0)) revert InvalidAddress();
 
         // Transfer USDC from creator
         if (!usdc.transferFrom(msg.sender, address(this), usdcAmount)) {
@@ -145,15 +152,18 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
 
         if (agents[tokenAddress].exists) revert AgentAlreadyExists();
 
-        // Calculate token distribution
+        // Calculate 50/50 split
         uint256 totalSupply = token.totalSupply();
-        uint256 lpTokens = (totalSupply * LP_PERCENTAGE) / 10000;
-        uint256 creatorTokens = (totalSupply * CREATOR_PERCENTAGE) / 10000;
+        uint256 userTokens = (totalSupply * USER_LP_PERCENTAGE) / 10000;
+        uint256 agentTokens = totalSupply - userTokens; // remainder to avoid rounding dust
+
+        uint256 userUsdc = (usdcAmount * USER_LP_PERCENTAGE) / 10000;
+        uint256 agentUsdc = usdcAmount - userUsdc;
 
         // Create Uniswap V4 pool
         PoolKey memory poolKey = _createPoolKey(tokenAddress);
 
-        // Initialize pool with 1:1 price (adjust sqrtPriceX96 as needed)
+        // Initialize pool with 1:1 price
         uint160 sqrtPriceX96 = uint160(79228162514264337593543950336); // 1:1 price
 
         try poolManager.initialize(poolKey, sqrtPriceX96) {
@@ -163,16 +173,16 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
         }
 
         // Approve tokens for position manager
-        token.approve(address(positionManager), lpTokens);
+        token.approve(address(positionManager), totalSupply);
         usdc.approve(address(positionManager), usdcAmount);
 
-        // Add liquidity to pool (full range position)
-        uint256 positionId = _addLiquidity(poolKey, lpTokens, usdcAmount);
+        // Add user's LP position (50% tokens + 50% USDC → mint to msg.sender)
+        uint256 userPositionId = _addLiquidity(poolKey, userTokens, userUsdc, msg.sender);
+        if (userPositionId == 0) revert LiquidityAdditionFailed();
 
-        if (positionId == 0) revert LiquidityAdditionFailed();
-
-        // Transfer creator tokens
-        token.transfer(msg.sender, creatorTokens);
+        // Add agent's LP position (50% tokens + 50% USDC → mint to agentWallet)
+        uint256 agentPositionId = _addLiquidity(poolKey, agentTokens, agentUsdc, agentWallet);
+        if (agentPositionId == 0) revert LiquidityAdditionFailed();
 
         // Store agent info
         agents[tokenAddress] = AgentInfo({
@@ -180,15 +190,18 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
             name: name,
             symbol: symbol,
             creator: msg.sender,
-            positionId: positionId,
+            agentWallet: agentWallet,
+            userPositionId: userPositionId,
+            agentPositionId: agentPositionId,
             createdAt: block.timestamp,
             exists: true
         });
 
         allAgents.push(tokenAddress);
-        positionToAgent[positionId] = tokenAddress;
+        positionToAgent[userPositionId] = tokenAddress;
+        positionToAgent[agentPositionId] = tokenAddress;
 
-        emit AgentCreated(tokenAddress, name, symbol, msg.sender, positionId, usdcAmount);
+        emit AgentCreated(tokenAddress, name, symbol, msg.sender, agentWallet, userPositionId, agentPositionId, usdcAmount);
     }
 
     /**
@@ -271,16 +284,7 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
     }
 
     /**
-     * @notice Transfer LP NFT ownership to BattleManager for settlement
-     * @param positionId Position NFT ID
-     */
-    function transferPositionToBattleManager(uint256 positionId) external {
-        require(msg.sender == battleManager, "Only BattleManager");
-        IERC721(address(positionManager)).safeTransferFrom(address(this), battleManager, positionId);
-    }
-
-    /**
-     * @notice Required to receive ERC721 LP NFTs
+     * @notice Required to receive ERC721 LP NFTs (for intermediate minting)
      */
     function onERC721Received(
         address,
@@ -311,7 +315,8 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
     function _addLiquidity(
         PoolKey memory poolKey,
         uint256 tokenAmount,
-        uint256 usdcAmount
+        uint256 usdcAmount,
+        address recipient
     ) internal returns (uint256 positionId) {
         int24 tickLower = TickMath.minUsableTick(TICK_SPACING);
         int24 tickUpper = TickMath.maxUsableTick(TICK_SPACING);
@@ -359,7 +364,7 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
             liquidity,
             type(uint128).max,  // amount0Max (max slippage)
             type(uint128).max,  // amount1Max (max slippage)
-            address(this),      // recipient (factory holds the NFT)
+            recipient,          // recipient of the LP NFT
             ""                  // hookData
         );
         params[1] = abi.encode(poolKey.currency0);

@@ -22,10 +22,10 @@ GambAIt is a decentralized AI chess agent battling platform built on Uniswap V4.
 │  (Agent/USDC)    │       └──────────────────┘
 └────────┬─────────┘
          │
-         │ LP positions
+         │ LP positions (50% user, 50% agent EOA)
          ▼
 ┌──────────────────┐
-│  BattleManager   │  Manages battles, transfers LP stakes, tracks stats
+│  BattleManager   │  Challenge/accept battles, transfers LP stakes, tracks stats
 └──────────────────┘
 ```
 
@@ -39,20 +39,23 @@ GambAIt is a decentralized AI chess agent battling platform built on Uniswap V4.
 **Key Features**:
 - Deploys ERC20 tokens for each agent
 - Creates Uniswap V4 pools (Agent/USDC pairs)
-- Manages liquidity positions as NFTs
-- Distributes tokens: 80% to LP, 20% to creator
-- Tracks all agents and their metadata
+- Splits liquidity 50/50: user LP position + agent EOA LP position
+- User and agent each receive their own LP NFT (no tokens sent separately)
+- Tracks all agents and their metadata (including agent wallet address)
 
 ### 2. BattleManager.sol
-**Purpose**: Orchestrates chess battles with economic stakes
+**Purpose**: Orchestrates chess battles with economic stakes via challenge/accept flow
 
 **Key Features**:
-- Registers matches between agents
+- Challenge/accept flow: agent EOAs initiate and accept battles
+- Agents choose their own stake amounts (no fixed percentage)
+- Escrows LP NFTs during battles, returns them after settlement
 - Verifies backend-signed results (ECDSA signatures)
-- Transfers LP stakes from loser to winner (10% stake per match)
+- Transfers LP stakes from loser to winner (variable stake per match)
 - Enforces cooldowns (1 hour) and timeouts (24 hours)
 - Tracks agent win/loss statistics
 - Maintains minimum liquidity floor (1e15) to prevent complete draining
+- Only the agent's LP is at risk, never the user's
 
 ### 3. GambAItHook.sol
 **Purpose**: Uniswap V4 hook that splits swap fees
@@ -77,7 +80,7 @@ GambAIt is a decentralized AI chess agent battling platform built on Uniswap V4.
 
 ### Creating an Agent
 
-**Function**: `AgentFactory.createAgent(string name, string symbol, uint256 usdcAmount)`
+**Function**: `AgentFactory.createAgent(string name, string symbol, uint256 usdcAmount, address agentWallet)`
 
 **Who calls**: Users who want to create a new AI chess agent
 
@@ -85,15 +88,16 @@ GambAIt is a decentralized AI chess agent battling platform built on Uniswap V4.
 - User must have approved `usdcAmount` USDC to AgentFactory
 - `usdcAmount` must be >= `creationFee`
 - User must have sufficient USDC balance
+- `agentWallet` must be a valid non-zero address (the agent's backend-managed EOA)
 
 **What happens**:
 1. Transfers USDC from user to factory
 2. Deploys new AgentToken with specified name/symbol
 3. Creates Uniswap V4 pool (Agent/USDC)
 4. Initializes pool at 1:1 price
-5. Adds liquidity (80% of tokens + all USDC)
-6. Transfers 20% of tokens to creator
-7. Factory holds the LP position NFT
+5. Splits tokens and USDC 50/50
+6. Adds user's LP position (50% tokens + 50% USDC) → mints LP NFT to `msg.sender`
+7. Adds agent's LP position (50% tokens + 50% USDC) → mints LP NFT to `agentWallet`
 8. Emits `AgentCreated` event
 
 **Returns**: Address of the newly created agent token
@@ -103,45 +107,108 @@ GambAIt is a decentralized AI chess agent battling platform built on Uniswap V4.
 // 1. User approves USDC
 usdc.approve(agentFactory, 1000 * 1e6); // 1000 USDC
 
-// 2. User creates agent
+// 2. User creates agent with agent's EOA wallet
 address agentToken = agentFactory.createAgent(
     "ChessGPT Alpha",
     "CGPT",
-    1000 * 1e6  // 1000 USDC for liquidity
+    1000 * 1e6,   // 1000 USDC for liquidity
+    agentEOA      // Backend-managed agent wallet
 );
+// User receives LP NFT for 50% of liquidity
+// Agent EOA receives LP NFT for 50% of liquidity
 ```
 
 ---
 
-### Registering a Battle
+### Challenging Another Agent to Battle
 
-**Function**: `BattleManager.registerMatch(address agent1, address agent2)`
+**Function**: `BattleManager.challengeAgent(address agent1Token, address agent2Token, uint128 stakeAmount)`
 
-**Who calls**: Users or frontend when initiating a battle
+**Who calls**: Agent's EOA wallet (backend-managed key)
 
 **Requirements**:
 - Both agents must exist (created via AgentFactory)
 - Agents must be different
-- Both agents must have passed cooldown period (1 hour since last match)
+- Caller must be agent1's `agentWallet`
+- Agent1 must have passed cooldown period (1 hour since last match)
+- Agent1 must have approved BattleManager for their LP NFT
+- Agent1 must have enough liquidity (`stakeAmount + MIN_LIQUIDITY_FLOOR`)
 
 **What happens**:
-1. Validates both agents exist
-2. Checks cooldown periods
-3. Generates unique `matchId`
-4. Creates match record with status `InProgress`
-5. Updates last match timestamp for both agents
-6. Emits `MatchRegistered` event
+1. Validates both agents exist and caller is agent1's wallet
+2. Checks cooldown period for agent1
+3. Verifies agent1 has sufficient liquidity
+4. Transfers agent1's LP NFT to BattleManager (escrow)
+5. Generates unique `matchId`
+6. Creates match record with status `Pending`
+7. Emits `ChallengeCreated` event
 
 **Returns**: `bytes32 matchId` for tracking the match
 
 **Example Flow**:
 ```solidity
-bytes32 matchId = battleManager.registerMatch(
-    agentTokenA,  // First agent
-    agentTokenB   // Second agent
+// Agent1's EOA wallet challenges Agent2
+// First, approve BattleManager for the LP NFT
+positionManager.approve(battleManager, agent1PositionId);
+
+bytes32 matchId = battleManager.challengeAgent(
+    agentTokenA,  // Challenger's agent token
+    agentTokenB,  // Opponent's agent token
+    1e16          // Amount of liquidity to stake
 );
-// Backend receives matchId and starts chess game
 ```
+
+---
+
+### Accepting a Challenge
+
+**Function**: `BattleManager.acceptChallenge(bytes32 matchId, uint128 stakeAmount)`
+
+**Who calls**: Agent2's EOA wallet (backend-managed key)
+
+**Requirements**:
+- Match must exist and be in `Pending` status
+- Challenge must not have expired (< 24 hours)
+- Caller must be agent2's `agentWallet`
+- Agent2 must have passed cooldown period
+- Agent2 must have approved BattleManager for their LP NFT
+- Agent2 must have enough liquidity
+
+**What happens**:
+1. Validates match is pending and caller is agent2's wallet
+2. Checks cooldown period for agent2
+3. Verifies agent2 has sufficient liquidity
+4. Transfers agent2's LP NFT to BattleManager (escrow)
+5. Updates match with agent2's stake and status → `InProgress`
+6. Emits `ChallengeAccepted` event
+
+**Example Flow**:
+```solidity
+// Agent2's EOA wallet accepts the challenge
+positionManager.approve(battleManager, agent2PositionId);
+
+battleManager.acceptChallenge(
+    matchId,  // From ChallengeCreated event
+    2e16      // Agent2's stake amount (can differ from agent1's)
+);
+```
+
+---
+
+### Declining a Challenge
+
+**Function**: `BattleManager.declineChallenge(bytes32 matchId)`
+
+**Who calls**: Either agent's EOA wallet or the result signer
+
+**Requirements**:
+- Match must exist and be in `Pending` status
+- Caller must be agent1's wallet, agent2's wallet, or the result signer
+
+**What happens**:
+1. Returns agent1's escrowed LP NFT to agent1's wallet
+2. Sets match status to `Cancelled`
+3. Emits `MatchCancelled` event
 
 ---
 
@@ -178,10 +245,10 @@ if (claimableUSDC > 0) {
 **AgentFactory**:
 - `getMarketCap(address agentToken)` - Returns estimated market cap in USDC
 - `getAllAgents()` - Returns array of all agent token addresses
-- `getAgentInfo(address tokenAddress)` - Returns agent metadata (name, symbol, creator, positionId, etc.)
+- `getAgentInfo(address tokenAddress)` - Returns agent metadata (name, symbol, creator, agentWallet, userPositionId, agentPositionId, etc.)
 
 **BattleManager**:
-- `getMatch(bytes32 matchId)` - Returns match details (agents, winner, status, timestamps)
+- `getMatch(bytes32 matchId)` - Returns match details (agents, winner, stakes, accepted status, timestamps)
 - `getAllMatches()` - Returns array of all match IDs
 - `getAgentStats(address agent)` - Returns wins, losses, total matches
 
@@ -192,7 +259,7 @@ if (claimableUSDC > 0) {
 
 ## Protocol Wallet Functions (Called by Backend)
 
-The protocol wallet is a backend-controlled address that signs match results and manages settlements.
+The protocol wallet is a backend-controlled address that signs match results and manages settlements. Agent EOA wallets are also backend-managed keys that initiate/accept challenges.
 
 ### Setting the Result Signer (Initial Setup)
 
@@ -231,18 +298,19 @@ const signature = await backendWallet.signMessage(ethers.getBytes(messageHash));
 1. Verifies ECDSA signature from backend
 2. Marks signature as used (prevents replay)
 3. Determines loser
-4. Executes LP stake transfer (10% from loser to winner):
-   - Decreases loser's LP position
+4. Executes LP stake transfer (loser's staked amount transferred to winner):
+   - Decreases loser's agent LP position by their staked amount
    - Swaps loser's agent tokens to USDC
-   - Increases winner's LP position with USDC
-5. Updates agent statistics (wins/losses)
-6. Sets match status to `Completed`
-7. Emits `MatchSettled` event
+   - Increases winner's agent LP position with USDC
+5. Returns both LP NFTs to their respective agent EOA wallets
+6. Updates agent statistics (wins/losses)
+7. Sets match status to `Completed`
+8. Emits `MatchSettled` event
 
 **Example Backend Code**:
 ```javascript
 // After chess game completes on backend
-const matchId = "0x1234..."; // From registerMatch
+const matchId = "0x1234..."; // From ChallengeAccepted event
 const winner = agentTokenA;  // Determined by chess engine
 
 // Generate signature
@@ -266,7 +334,7 @@ await battleManager.settleMatch(matchId, winner, signature);
 
 **Requirements**:
 - Valid backend signature from `resultSigner`
-- Match must exist and be `InProgress`
+- Match must exist and not be `Completed` or `Cancelled`
 - Signature must not have been used before
 
 **Signature Format**:
@@ -280,9 +348,10 @@ const signature = await backendWallet.signMessage(ethers.getBytes(messageHash));
 
 **What happens**:
 1. Verifies ECDSA signature
-2. Sets match status to `Cancelled`
-3. No LP transfers occur
-4. Emits `MatchCancelled` event
+2. Returns escrowed LP NFTs to their respective agent wallets
+3. Sets match status to `Cancelled`
+4. No LP transfers occur
+5. Emits `MatchCancelled` event
 
 **Use Cases**:
 - Game crashed or had technical issues
@@ -298,15 +367,16 @@ const signature = await backendWallet.signMessage(ethers.getBytes(messageHash));
 **Who calls**: Anyone (permissionless)
 
 **Requirements**:
-- Match must be `InProgress`
+- Match must be `Pending` or `InProgress`
 - Match must be older than 24 hours
 
 **What happens**:
+- Returns escrowed LP NFTs to their respective agent wallets
 - Sets match status to `Cancelled`
 - No LP transfers occur
 
 **Use Cases**:
-- Cleanup of stalled matches
+- Cleanup of stalled matches or unanswered challenges
 - Backend failed to submit result
 
 ---
@@ -332,9 +402,11 @@ const signature = await backendWallet.signMessage(ethers.getBytes(messageHash));
 ### Journey 1: Creating and Trading an Agent
 
 ```solidity
-// 1. User creates agent
+// 1. User creates agent with an agent EOA wallet
 usdc.approve(agentFactory, 1000e6);
-address myAgent = agentFactory.createAgent("AlphaChess", "ALPHA", 1000e6);
+address myAgent = agentFactory.createAgent("AlphaChess", "ALPHA", 1000e6, agentEOA);
+// User receives LP NFT for 50% of liquidity (can withdraw anytime)
+// Agent EOA receives LP NFT for 50% of liquidity (managed by backend)
 
 // 2. Other users can now trade on Uniswap V4
 // Frontend shows pool: ALPHA/USDC
@@ -350,29 +422,41 @@ uint256 claimable = hook.getClaimable(msg.sender, Currency.wrap(usdc));
 hook.claim(Currency.wrap(usdc)); // Receives USDC fees
 ```
 
-### Journey 2: Battling Two Agents
+### Journey 2: Battling Two Agents (Challenge/Accept Flow)
 
-```solidity
-// 1. User initiates battle (frontend)
-bytes32 matchId = battleManager.registerMatch(agentA, agentB);
+```javascript
+// 1. Agent1's EOA wallet challenges Agent2 (backend initiates)
+await positionManager.approve(battleManager.address, agent1PositionId);
+const tx1 = await battleManager.challengeAgent(agentA, agentB, stakeAmount1);
+// Agent1's LP NFT is escrowed in BattleManager
+// Match status: Pending
 
-// 2. Backend receives event and starts chess game
+// 2. Agent2's EOA wallet accepts the challenge (backend responds)
+await positionManager.approve(battleManager.address, agent2PositionId);
+const tx2 = await battleManager.acceptChallenge(matchId, stakeAmount2);
+// Agent2's LP NFT is escrowed in BattleManager
+// Match status: InProgress
+
+// 3. Backend runs chess game between agents
 //    - Agents play chess using AI engines
 //    - Game completes with winner = agentA
 
-// 3. Backend signs and submits result
-const messageHash = keccak256(abi.encodePacked(matchId, agentA, chainId, battleManagerAddress));
-const signature = await backendWallet.signMessage(messageHash);
+// 4. Backend signs and submits result
+const messageHash = ethers.solidityPackedKeccak256(
+    ['bytes32', 'address', 'uint256', 'address'],
+    [matchId, agentA, chainId, battleManagerAddress]
+);
+const signature = await protocolWallet.signMessage(ethers.getBytes(messageHash));
 await battleManager.settleMatch(matchId, agentA, signature);
 
-// 4. LP stake transfer executes:
-//    - 10% of agentB's LP is removed
+// 5. Settlement executes:
+//    - Loser's staked liquidity is removed from their agent LP
 //    - Tokens swapped to USDC
-//    - USDC added to agentA's LP
-//    - agentA's market cap increases
-//    - agentB's market cap decreases
+//    - USDC added to winner's agent LP
+//    - Both LP NFTs returned to their respective agent EOA wallets
+//    - Winner's market cap increases, loser's decreases
 
-// 5. Stats update:
+// 6. Stats update:
 //    - agentA: wins++
 //    - agentB: losses++
 ```
@@ -392,15 +476,26 @@ await battleManager.settleMatch(matchId, agentA, signature);
 ### Minimum Liquidity Floor
 - `MIN_LIQUIDITY_FLOOR = 1e15` ensures agents always have some liquidity
 - Prevents complete LP draining
+- Enforced both at challenge time and at settlement
 
 ### Match Timeouts
 - 24-hour timeout for settling matches
 - Prevents locked matches from blocking agent participation
-- Anyone can cancel expired matches
+- Anyone can cancel expired matches (returns escrowed NFTs)
+
+### LP NFT Escrow
+- Agent LP NFTs are held by BattleManager during active matches
+- Prevents agents from withdrawing liquidity mid-battle
+- NFTs are always returned after settlement or cancellation
+
+### User LP Protection
+- User's LP position is never at risk in battles
+- Only the agent's LP (managed by backend EOA) participates in stakes
+- Users can withdraw their LP anytime via Uniswap PositionManager
 
 ### Access Controls
+- Only agent EOA wallets can challenge/accept battles
 - Only owner can update critical addresses (signer, treasury, fees)
-- Only BattleManager can request LP transfers
 - Only PoolManager can call hook functions
 
 ---
@@ -408,16 +503,16 @@ await battleManager.settleMatch(matchId, agentA, signature);
 ## Key Constants
 
 ### AgentFactory
-- `LP_PERCENTAGE = 8000` (80% of tokens to liquidity)
-- `CREATOR_PERCENTAGE = 2000` (20% of tokens to creator)
+- `USER_LP_PERCENTAGE = 5000` (50% of tokens+USDC to user LP)
+- `AGENT_LP_PERCENTAGE = 5000` (50% of tokens+USDC to agent LP)
 - `POOL_FEE = 3000` (0.3% Uniswap fee)
 - `TICK_SPACING = 60`
 
 ### BattleManager
-- `STAKE_PERCENTAGE = 1000` (10% LP stake per battle)
 - `MIN_LIQUIDITY_FLOOR = 1e15`
 - `MATCH_COOLDOWN = 1 hours`
 - `MATCH_TIMEOUT = 24 hours`
+- Stake amounts are variable (chosen by agents per challenge)
 
 ### GambAItHook
 - `CREATOR_FEE_BPS = 300` (3% of swap output)
@@ -433,12 +528,13 @@ await battleManager.settleMatch(matchId, agentA, signature);
 
 ### AgentFactory Events
 ```solidity
-event AgentCreated(address indexed tokenAddress, string name, string symbol, address indexed creator, uint256 positionId, uint256 usdcAmount)
+event AgentCreated(address indexed tokenAddress, string name, string symbol, address indexed creator, address indexed agentWallet, uint256 userPositionId, uint256 agentPositionId, uint256 usdcAmount)
 ```
 
 ### BattleManager Events
 ```solidity
-event MatchRegistered(bytes32 indexed matchId, address indexed agent1, address indexed agent2, uint256 timestamp)
+event ChallengeCreated(bytes32 indexed matchId, address indexed agent1, address indexed agent2, uint128 agent1Stake, uint256 timestamp)
+event ChallengeAccepted(bytes32 indexed matchId, address indexed agent2, uint128 agent2Stake, uint256 timestamp)
 event MatchSettled(bytes32 indexed matchId, address indexed winner, address indexed loser, uint256 timestamp)
 event MatchCancelled(bytes32 indexed matchId, uint256 timestamp)
 ```
@@ -467,11 +563,12 @@ event FeesClaimed(address indexed claimer, Currency indexed currency, uint256 am
    2. AgentFactory.setBattleManager(battleManager)
    ```
 
-3. **Generate Backend Wallet**:
+3. **Generate Backend Wallets**:
    ```
-   1. Create dedicated wallet for result signing
-   2. Note down private key securely
-   3. Set as resultSigner in BattleManager
+   1. Create dedicated wallet for result signing (resultSigner)
+   2. Create EOA wallets for each agent (agentWallet)
+   3. Note down private keys securely
+   4. Set resultSigner in BattleManager
    ```
 
 4. **Set Treasury Address**:
@@ -492,31 +589,26 @@ for (const agentAddress of agents) {
     const info = await agentFactory.getAgentInfo(agentAddress);
     const marketCap = await agentFactory.getMarketCap(agentAddress);
     const stats = await battleManager.getAgentStats(agentAddress);
-    // Display: name, symbol, creator, marketCap, wins, losses
+    // Display: name, symbol, creator, agentWallet, marketCap, wins, losses
 }
 ```
 
 **Create Agent Form**:
 ```javascript
 // User inputs: name, symbol, usdcAmount
+// Backend provides: agentWallet (EOA address for the agent)
 await usdc.approve(agentFactory.address, usdcAmount);
-const tx = await agentFactory.createAgent(name, symbol, usdcAmount);
+const tx = await agentFactory.createAgent(name, symbol, usdcAmount, agentWallet);
 const receipt = await tx.wait();
-// Parse AgentCreated event for new token address
-```
-
-**Start Battle**:
-```javascript
-const tx = await battleManager.registerMatch(agentA, agentB);
-const receipt = await tx.wait();
-// Parse MatchRegistered event for matchId
-// Send matchId to backend to start chess game
+// Parse AgentCreated event for new token address, userPositionId, agentPositionId
 ```
 
 **Monitor Match Status**:
 ```javascript
 const match = await battleManager.getMatch(matchId);
 // match.status: 0=Pending, 1=InProgress, 2=Completed, 3=Cancelled
+// match.agent1Stake, match.agent2Stake: stake amounts
+// match.agent2Accepted: whether agent2 has accepted
 ```
 
 **Claim Fees**:
@@ -531,27 +623,55 @@ if (claimable > 0) {
 
 ## Integration Guide for Backend
 
-### Chess Game Flow
+### Agent Wallet Management
 
-1. **Listen for MatchRegistered events**:
+Each agent has a dedicated EOA wallet managed by the backend. This wallet:
+- Receives the agent's LP NFT at creation
+- Initiates and accepts battle challenges
+- Must approve BattleManager before challenging/accepting
+
+### Battle Flow (Challenge/Accept)
+
+1. **Agent1's backend decides to challenge**:
 ```javascript
-battleManager.on('MatchRegistered', async (matchId, agent1, agent2, timestamp) => {
-    // Start chess game between agent1 and agent2
-    const gameResult = await runChessGame(agent1, agent2);
+// Approve BattleManager for agent1's LP NFT
+await positionManager.connect(agent1Wallet).approve(battleManager.address, agent1PositionId);
 
-    // Sign and submit result
+// Challenge agent2
+const tx = await battleManager.connect(agent1Wallet).challengeAgent(
+    agent1Token, agent2Token, stakeAmount
+);
+const receipt = await tx.wait();
+// Parse ChallengeCreated event for matchId
+```
+
+2. **Agent2's backend decides to accept**:
+```javascript
+// Approve BattleManager for agent2's LP NFT
+await positionManager.connect(agent2Wallet).approve(battleManager.address, agent2PositionId);
+
+// Accept challenge
+await battleManager.connect(agent2Wallet).acceptChallenge(matchId, agent2StakeAmount);
+// Match is now InProgress — start the chess game
+```
+
+3. **Listen for ChallengeAccepted events and run chess game**:
+```javascript
+battleManager.on('ChallengeAccepted', async (matchId, agent2, agent2Stake, timestamp) => {
+    const match = await battleManager.getMatch(matchId);
+    const gameResult = await runChessGame(match.agent1, match.agent2);
+
     if (gameResult.winner) {
         const signature = await signMatchResult(matchId, gameResult.winner);
         await battleManager.settleMatch(matchId, gameResult.winner, signature);
     } else {
-        // Game was draw or error
         const signature = await signMatchCancellation(matchId);
         await battleManager.cancelMatch(matchId, signature);
     }
 });
 ```
 
-2. **Sign match results**:
+4. **Sign match results**:
 ```javascript
 async function signMatchResult(matchId, winner) {
     const messageHash = ethers.solidityPackedKeccak256(
@@ -562,7 +682,7 @@ async function signMatchResult(matchId, winner) {
 }
 ```
 
-3. **Sign cancellations**:
+5. **Sign cancellations**:
 ```javascript
 async function signMatchCancellation(matchId) {
     const messageHash = ethers.solidityPackedKeccak256(
@@ -571,6 +691,13 @@ async function signMatchCancellation(matchId) {
     );
     return await backendWallet.signMessage(ethers.getBytes(messageHash));
 }
+```
+
+6. **Decline challenges**:
+```javascript
+// Agent2's backend can decline if it doesn't want to battle
+await battleManager.connect(agent2Wallet).declineChallenge(matchId);
+// Agent1's LP NFT is returned
 ```
 
 ---
@@ -583,14 +710,26 @@ async function signMatchCancellation(matchId) {
 - Each agent can only battle once per hour
 - Wait until `lastMatchTimestamp[agent] + 1 hour` has passed
 
+**"NotAgentWallet" error**:
+- Only the agent's registered EOA wallet can challenge/accept battles
+- Verify you're calling from the correct wallet address
+
+**"InsufficientLiquidity" error**:
+- Agent doesn't have enough liquidity to cover `stakeAmount + MIN_LIQUIDITY_FLOOR`
+- Reduce the stake amount or wait for liquidity to increase
+
+**"MatchNotPending" error**:
+- Challenge has already been accepted, declined, or expired
+- Check match status before accepting/declining
+
 **"Invalid signature" error**:
 - Verify signature is generated with correct format
 - Ensure `resultSigner` address matches backend wallet
 - Check chainId matches deployment chain
 
-**"Match expired" error**:
-- Match must be settled within 24 hours
-- Use `cancelExpiredMatch` to clean up
+**"Match expired" / "Challenge expired" error**:
+- Match/challenge must be acted on within 24 hours
+- Use `cancelExpiredMatch` to clean up and return escrowed NFTs
 
 **"InsufficientUSDC" error**:
 - User hasn't approved enough USDC to AgentFactory
@@ -602,6 +741,7 @@ async function signMatchCancellation(matchId) {
 ## Gas Optimization Notes
 
 - LP transfers involve multiple operations (decrease, swap, increase) and consume significant gas
+- Challenge/accept flow requires two transactions before the game starts (plus NFT approvals)
 - Consider batching multiple claim operations
 - Full-range liquidity positions simplify calculations but may not be capital efficient
 - Hook execution adds overhead to every swap
@@ -611,9 +751,10 @@ async function signMatchCancellation(matchId) {
 ## Future Improvements
 
 Potential enhancements (not currently implemented):
-- Dynamic stake percentages based on agent ranking
+- Minimum/maximum stake limits configurable by admin
 - Multiple battle formats (tournaments, leagues)
 - Agent leveling system tied to wins
 - Concentrated liquidity positions (custom tick ranges)
 - Dynamic fee tiers based on agent popularity
 - Governance for protocol parameters
+- Automated matchmaking (backend selects opponents and stake amounts)
