@@ -9,9 +9,12 @@ import { baseSepolia } from 'wagmi/chains';
 import type { AgentPlaystyle, Agent } from '@/types/agent';
 import { apiService } from '@/utils/apiService';
 import { useWallet } from '@/hooks/useWallet';
-import { agentFactoryAbi, usdcAbi } from '@/lib/contracts/abis';
+import { agentFactoryAbi } from '@/lib/contracts/abis';
 import { getAgentFactoryAddress, getUsdcAddress } from '@/lib/contracts/config';
 import { maxUint256 } from 'viem';
+import { readContract } from 'wagmi/actions';
+import { wagmiConfig } from '@/config/wagmiConfig';
+import usdcAbi from "@/lib/contracts/erc20.json"
 
 export interface CreateAgentDialogProps {
   open: boolean;
@@ -122,15 +125,26 @@ export function CreateAgentDialog({
       const factoryAddress = getAgentFactoryAddress();
       const usdcAddress = getUsdcAddress();
 
-      const approveHash = await writeContractMutateAsync({
+      const allowance = await readContract(wagmiConfig, {
         address: usdcAddress,
         abi: usdcAbi,
-        functionName: 'approve',
-        args: [factoryAddress, maxUint256],
-        chainId: baseSepolia.id,
-      });
+        functionName: 'allowance',
+        args: [address, factoryAddress],
+      }) as bigint
+      console.log("allowance: ", allowance);
 
-      await publicClient.waitForTransactionReceipt({ hash: approveHash });
+      if (allowance < BigInt(1000)) {
+        const approveHash = await writeContractMutateAsync({
+          address: usdcAddress,
+          abi: usdcAbi,
+          functionName: 'approve',
+          args: [factoryAddress, maxUint256],
+          chainId: baseSepolia.id,
+        });
+
+        await publicClient.waitForTransactionReceipt({ hash: approveHash });
+      }
+
 
       // Step 4: Call AgentFactory.createAgent
       setStatusText('Deploying agent on-chain...');

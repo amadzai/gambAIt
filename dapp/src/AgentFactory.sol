@@ -19,6 +19,15 @@ import {FullMath} from "v4-core/libraries/FullMath.sol";
 import {LiquidityAmounts} from "@uniswap/v4-periphery/src/libraries/LiquidityAmounts.sol";
 import "./AgentToken.sol";
 
+interface IAllowanceTransfer {
+    function approve(
+        address token,
+        address spender,
+        uint160 amount,
+        uint48 expiration
+    ) external;
+}
+
 /**
  * @title AgentFactory
  * @notice Creates AI chess agents with tradeable ERC20 tokens on Uniswap V4
@@ -42,6 +51,9 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
 
     /// @notice Hook contract address
     address public hookAddress;
+
+    /// @notice Canonical Permit2 address
+    address public constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
 
     /// @notice Fee to create an agent (in USDC, 6 decimals)
     uint256 public creationFee;
@@ -172,9 +184,23 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
             revert PoolInitializationFailed();
         }
 
-        // Approve tokens for position manager
-        token.approve(address(positionManager), totalSupply);
-        usdc.approve(address(positionManager), usdcAmount);
+        // Approve Permit2 to spend tokens on behalf of this contract
+        token.approve(PERMIT2, totalSupply);
+        usdc.approve(PERMIT2, usdcAmount);
+
+        // Approve PositionManager via Permit2's allowance transfer
+        IAllowanceTransfer(PERMIT2).approve(
+            address(token),
+            address(positionManager),
+            type(uint160).max,
+            uint48(block.timestamp + 60)
+        );
+        IAllowanceTransfer(PERMIT2).approve(
+            address(usdc),
+            address(positionManager),
+            type(uint160).max,
+            uint48(block.timestamp + 60)
+        );
 
         // Add user's LP position (50% tokens + 50% USDC → mint to msg.sender)
         uint256 userPositionId = _addLiquidity(poolKey, userTokens, userUsdc, msg.sender);
@@ -308,7 +334,7 @@ contract AgentFactory is ReentrancyGuard, Ownable, IERC721Receiver {
             currency1: currency1,
             fee: POOL_FEE,
             tickSpacing: TICK_SPACING,
-            hooks: IHooks(hookAddress)
+            hooks: IHooks(address(0)) // Explicitly hookless pool
         });
     }
 
