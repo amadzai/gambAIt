@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Clock, Users, TrendingUp } from "lucide-react";
+import { Users, TrendingUp } from "lucide-react";
+import { MarketplaceNav } from "@/components/marketplace/marketplace-nav";
 import { MatchChessBoard } from "@/components/marketplace/match-chess-board";
 import { EvaluationBar } from "@/components/marketplace/evaluation-bar";
 import { MoveHistoryPanel } from "@/components/marketplace/move-history-panel";
@@ -39,51 +40,9 @@ export default function MatchPage() {
     return match.position;
   }, [useLiveGame, liveGame?.fen, match.position]);
 
-  const [timeElapsed, setTimeElapsed] = useState("");
-
-  useEffect(() => {
-    const startTime = Date.now() - 1800000; // 30 min ago
-    const updateTime = () => {
-      const elapsed = Date.now() - startTime;
-      const minutes = Math.floor(elapsed / 60000);
-      const seconds = Math.floor((elapsed % 60000) / 1000);
-      setTimeElapsed(`${minutes}:${seconds.toString().padStart(2, "0")}`);
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Back to Marketplace
-            </Link>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-red-500/20 border border-red-500/50 rounded-lg px-4 py-2">
-                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-sm font-medium text-red-400">LIVE</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <Clock className="w-4 h-4" />
-                <span className="font-mono">{timeElapsed}</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <Users className="w-4 h-4" />
-                <span>1,234 watching</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <MarketplaceNav />
 
       <div className="max-w-[1800px] mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_350px] gap-6">
