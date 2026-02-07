@@ -18,17 +18,37 @@ export class GetMyTokenBalanceParams extends toolParams(
 ) {}
 
 /**
- * Transfer ERC20 tokens from the agent's own wallet to another address.
+ * Send USDC from the agent wallet.
+ * Only needs the recipient and amount in human-readable USDC (e.g. "50").
+ * USDC contract address and decimal conversion are handled automatically.
+ */
+export class SendUsdcParams extends toolParams(
+  z.object({
+    to: z.string().describe('The recipient wallet address'),
+    amount: z
+      .string()
+      .describe(
+        'The amount of USDC to send in human-readable units (e.g. "50" for 50 USDC)',
+      ),
+  }),
+) {}
+
+/**
+ * Transfer any ERC20 token from the agent's own wallet to another address.
+ * Amount is in human-readable units (e.g. "100" for 100 tokens) —
+ * decimal conversion is handled automatically by reading the token's decimals.
  */
 export class TransferTokenParams extends toolParams(
   z.object({
     tokenAddress: z
       .string()
       .describe('The ERC20 token contract address to transfer'),
-    to: z.string().describe('The recipient address'),
+    to: z.string().describe('The recipient wallet address'),
     amount: z
       .string()
-      .describe('The amount of tokens to transfer in base units'),
+      .describe(
+        'The amount of tokens to send in human-readable units (e.g. "100" for 100 tokens). Decimals are converted automatically.',
+      ),
   }),
 ) {}
 

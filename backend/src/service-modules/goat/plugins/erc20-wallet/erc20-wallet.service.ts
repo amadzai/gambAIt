@@ -1,8 +1,9 @@
 import { Tool } from '@goat-sdk/core';
 import { EVMWalletClient } from '@goat-sdk/wallet-evm';
-import { parseAbi } from 'viem';
+import { parseAbi, parseUnits } from 'viem';
 import {
   GetMyTokenBalanceParams,
+  SendUsdcParams,
   TransferTokenParams,
   EmptyParams,
 } from './parameters.js';
@@ -14,6 +15,9 @@ const erc20Abi = parseAbi([
   'function symbol() external view returns (string)',
   'function transfer(address to, uint256 amount) external returns (bool)',
 ]);
+
+/** USDC always uses 6 decimals. */
+const USDC_DECIMALS = 6;
 
 export class Erc20WalletService {
   /** USDC contract address on the current chain. */
@@ -43,11 +47,9 @@ export class Erc20WalletService {
       args: [wallet],
     });
 
-    // USDC uses 6 decimals
-    const decimals = 6;
-    const formatted = Number(rawBalance.value) / 10 ** decimals;
+    const formatted = Number(rawBalance.value) / 10 ** USDC_DECIMALS;
 
-    return `USDC balance for ${wallet}: ${formatted} USDC (${String(rawBalance.value)} base units, ${decimals} decimals)`;
+    return `USDC balance for ${wallet}: ${formatted} USDC (${String(rawBalance.value)} base units, ${USDC_DECIMALS} decimals)`;
   }
 
   @Tool({
@@ -59,21 +61,22 @@ export class Erc20WalletService {
     parameters: GetMyTokenBalanceParams,
   ): Promise<string> {
     const wallet = walletClient.getAddress();
+    const tokenAddr = parameters.tokenAddress as `0x${string}`;
 
     const [rawBalance, rawDecimals, rawSymbol] = await Promise.all([
       walletClient.read({
-        address: parameters.tokenAddress as `0x${string}`,
+        address: tokenAddr,
         abi: erc20Abi,
         functionName: 'balanceOf',
         args: [wallet],
       }),
       walletClient.read({
-        address: parameters.tokenAddress as `0x${string}`,
+        address: tokenAddr,
         abi: erc20Abi,
         functionName: 'decimals',
       }),
       walletClient.read({
-        address: parameters.tokenAddress as `0x${string}`,
+        address: tokenAddr,
         abi: erc20Abi,
         functionName: 'symbol',
       }),
@@ -86,23 +89,55 @@ export class Erc20WalletService {
     return `${symbol} balance for ${wallet}: ${formatted} ${symbol} (${String(rawBalance.value)} base units, ${decimals} decimals)`;
   }
 
-  // ─── Transfer helper (wallet address auto-injected as sender) ──────
+  @Tool({
+    description:
+      'Send USDC from the agent wallet to another address. Only requires the recipient address and the amount in normal USDC units (e.g. "50" means 50 USDC). The USDC contract address and decimal conversion are handled automatically.',
+  })
+  async sendUsdc(
+    walletClient: EVMWalletClient,
+    parameters: SendUsdcParams,
+  ): Promise<string> {
+    const amount = String(parameters.amount);
+    const to = String(parameters.to);
+    const baseUnits = parseUnits(amount, USDC_DECIMALS);
+
+    const { hash } = await walletClient.sendTransaction({
+      to: this.usdcAddress,
+      abi: erc20Abi,
+      functionName: 'transfer',
+      args: [to, baseUnits],
+    });
+
+    return `Sent ${amount} USDC to ${to}. Transaction hash: ${hash}`;
+  }
 
   @Tool({
     description:
-      'Transfer ERC20 tokens from the agent wallet to another address. The sender is automatically the agent wallet.',
+      'Transfer any ERC20 token from the agent wallet to another address. Provide the token contract address, recipient, and amount in human-readable units (e.g. "100" for 100 tokens). Decimal conversion is handled automatically by reading the token contract.',
   })
   async transferToken(
     walletClient: EVMWalletClient,
     parameters: TransferTokenParams,
   ): Promise<string> {
+    const tokenAddr = String(parameters.tokenAddress) as `0x${string}`;
+    const amount = String(parameters.amount);
+    const to = String(parameters.to);
+
+    const rawDecimals = await walletClient.read({
+      address: tokenAddr,
+      abi: erc20Abi,
+      functionName: 'decimals',
+    });
+    const decimals = Number(rawDecimals.value);
+    const baseUnits = parseUnits(amount, decimals);
+
     const { hash } = await walletClient.sendTransaction({
-      to: parameters.tokenAddress as `0x${string}`,
+      to: tokenAddr,
       abi: erc20Abi,
       functionName: 'transfer',
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      args: [parameters.to, BigInt(parameters.amount)],
+      args: [to, baseUnits],
     });
-    return `Transfer sent. Transaction hash: ${hash}`;
+
+    return `Sent ${amount} tokens to ${to}. Transaction hash: ${hash}`;
   }
 }

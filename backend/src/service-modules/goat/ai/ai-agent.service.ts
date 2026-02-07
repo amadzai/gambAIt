@@ -58,11 +58,11 @@ export class AIAgentService {
     - Claim swap fee rewards
     - Swap tokens through Uniswap V4 pools
 
-    Token balance tools:
+    Token tools (wallet address, contract addresses, and decimal conversion are all automatic):
     - To check your USDC balance, call getMyUsdcBalance (no parameters needed).
     - To check any ERC20 token balance, call getMyTokenBalance with only the tokenAddress.
-      Your wallet address is automatically injected — never pass a wallet parameter manually.
-    - To transfer tokens, call transferToken with tokenAddress, to, and amount.
+    - To send USDC, call sendUsdc with "to" (recipient address) and "amount" in human-readable USDC (e.g. "50" for 50 USDC). Do NOT convert to base units yourself.
+    - To send any other ERC20 token, call transferToken with tokenAddress, to, and amount in human-readable units. Do NOT convert to base units yourself.
 
     Make strategic decisions based on the context provided. Be concise in your reasoning.`;
 
