@@ -20,3 +20,7 @@ export {
   useDashboard,
   type UseDashboardResult,
 } from "./useDashboard";
+export {
+  useMyDashboard,
+  type UseMyDashboardResult,
+} from "./useMyDashboard";

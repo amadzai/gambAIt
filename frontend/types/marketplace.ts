@@ -20,6 +20,7 @@ export interface MyDashboardAgent {
   id: string;
   name: string;
   avatar: string;
+  profileImage?: string | null;
   /** Display rating (e.g. ELO). */
   rating: number;
   wins: number;
@@ -86,6 +87,7 @@ export interface PortfolioPosition {
   agentId: string;
   agentName: string;
   avatar: string;
+  profileImage?: string | null;
   shares: number;
   avgPrice: number;
   currentPrice: number;
