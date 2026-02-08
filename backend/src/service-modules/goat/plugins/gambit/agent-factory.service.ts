@@ -25,18 +25,28 @@ export class AgentFactoryService {
     walletClient: EVMWalletClient,
     parameters: CreateAgentParams,
   ): Promise<string> {
-    const { hash } = await walletClient.sendTransaction({
-      to: this.contractAddress,
-      abi: agentFactoryAbi as Abi,
-      functionName: 'createAgent',
-      args: [
-        parameters.name,
-        parameters.symbol,
-        BigInt(String(parameters.usdcAmount)),
-        parameters.agentWallet,
-      ],
-    });
-    return `Agent created. Transaction hash: ${hash}`;
+    console.log(
+      `[AgentFactory] createAgent called — name=${parameters.name}, symbol=${parameters.symbol}, usdcAmount=${parameters.usdcAmount}, agentWallet=${parameters.agentWallet}, contract=${this.contractAddress}`,
+    );
+    try {
+      const { hash } = await walletClient.sendTransaction({
+        to: this.contractAddress,
+        abi: agentFactoryAbi as Abi,
+        functionName: 'createAgent',
+        args: [
+          parameters.name,
+          parameters.symbol,
+          BigInt(String(parameters.usdcAmount)),
+          parameters.agentWallet,
+        ],
+      });
+      console.log(`[AgentFactory] createAgent tx sent — hash=${hash}`);
+      return `Agent created. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[AgentFactory] createAgent failed: ${msg}`);
+      return `Create agent failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -47,13 +57,24 @@ export class AgentFactoryService {
     walletClient: EVMWalletClient,
     parameters: GetMarketCapParams,
   ): Promise<string> {
-    const result = await walletClient.read({
-      address: this.contractAddress,
-      abi: agentFactoryAbi as Abi,
-      functionName: 'getMarketCap',
-      args: [parameters.agentToken],
-    });
-    return `Market cap: ${String(result.value)} (USDC base units, 6 decimals)`;
+    console.log(
+      `[AgentFactory] getMarketCap called — agentToken=${parameters.agentToken}, contract=${this.contractAddress}`,
+    );
+    try {
+      const result = await walletClient.read({
+        address: this.contractAddress,
+        abi: agentFactoryAbi as Abi,
+        functionName: 'getMarketCap',
+        args: [parameters.agentToken],
+      });
+      const output = `Market cap: ${String(result.value)} (USDC base units, 6 decimals)`;
+      console.log(`[AgentFactory] getMarketCap result: ${output}`);
+      return output;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[AgentFactory] getMarketCap failed: ${msg}`);
+      return `Get market cap failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -65,13 +86,23 @@ export class AgentFactoryService {
     parameters: EmptyParams,
   ): Promise<string> {
     void parameters;
-    const result = await walletClient.read({
-      address: this.contractAddress,
-      abi: agentFactoryAbi as Abi,
-      functionName: 'getAllAgents',
-    });
-    const agents = result.value as string[];
-    return `All agents (${agents.length}): ${agents.join(', ')}`;
+    console.log(
+      `[AgentFactory] getAllAgents called — contract=${this.contractAddress}`,
+    );
+    try {
+      const result = await walletClient.read({
+        address: this.contractAddress,
+        abi: agentFactoryAbi as Abi,
+        functionName: 'getAllAgents',
+      });
+      const agents = result.value as string[];
+      console.log(`[AgentFactory] getAllAgents result: ${agents.length} agents`);
+      return `All agents (${agents.length}): ${agents.join(', ')}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[AgentFactory] getAllAgents failed: ${msg}`);
+      return `Get all agents failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -82,15 +113,26 @@ export class AgentFactoryService {
     walletClient: EVMWalletClient,
     parameters: GetAgentInfoParams,
   ): Promise<string> {
-    const result = await walletClient.read({
-      address: this.contractAddress,
-      abi: agentFactoryAbi as Abi,
-      functionName: 'getAgentInfo',
-      args: [parameters.tokenAddress],
-    });
-    const replacer = (_key: string, value: unknown): unknown =>
-      typeof value === 'bigint' ? value.toString() : value;
-    return JSON.stringify(result.value, replacer);
+    console.log(
+      `[AgentFactory] getAgentInfo called — tokenAddress=${parameters.tokenAddress}, contract=${this.contractAddress}`,
+    );
+    try {
+      const result = await walletClient.read({
+        address: this.contractAddress,
+        abi: agentFactoryAbi as Abi,
+        functionName: 'getAgentInfo',
+        args: [parameters.tokenAddress],
+      });
+      const replacer = (_key: string, value: unknown): unknown =>
+        typeof value === 'bigint' ? value.toString() : value;
+      const json = JSON.stringify(result.value, replacer);
+      console.log(`[AgentFactory] getAgentInfo result: ${json}`);
+      return json;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[AgentFactory] getAgentInfo failed: ${msg}`);
+      return `Get agent info failed: ${msg}`;
+    }
   }
 
   @Tool({
@@ -101,12 +143,22 @@ export class AgentFactoryService {
     walletClient: EVMWalletClient,
     parameters: BuyOwnTokenParams,
   ): Promise<string> {
-    const { hash } = await walletClient.sendTransaction({
-      to: this.contractAddress,
-      abi: agentFactoryAbi as Abi,
-      functionName: 'buyOwnToken',
-      args: [parameters.agentToken, BigInt(String(parameters.usdcAmount))],
-    });
-    return `Token purchased. Transaction hash: ${hash}`;
+    console.log(
+      `[AgentFactory] buyOwnToken called — agentToken=${parameters.agentToken}, usdcAmount=${parameters.usdcAmount}, contract=${this.contractAddress}`,
+    );
+    try {
+      const { hash } = await walletClient.sendTransaction({
+        to: this.contractAddress,
+        abi: agentFactoryAbi as Abi,
+        functionName: 'buyOwnToken',
+        args: [parameters.agentToken, BigInt(String(parameters.usdcAmount))],
+      });
+      console.log(`[AgentFactory] buyOwnToken tx sent — hash=${hash}`);
+      return `Token purchased. Transaction hash: ${hash}`;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[AgentFactory] buyOwnToken failed: ${msg}`);
+      return `Buy own token failed: ${msg}`;
+    }
   }
 }

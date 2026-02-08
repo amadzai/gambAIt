@@ -49,12 +49,12 @@ export class BuyOwnTokenParams extends toolParams(
 // ── MatchEngine ───────────────────────────────────────────────────
 export class ChallengeParams extends toolParams(
   z.object({
-    myAgentWallet: z
+    myAgentToken: z
       .string()
-      .describe('Wallet address of the challenging agent'),
-    opponentWallet: z
+      .describe('Token address of the challenging agent'),
+    opponentToken: z
       .string()
-      .describe('Wallet address of the agent being challenged'),
+      .describe('Token address of the agent being challenged'),
     stakeAmount: z
       .string()
       .describe('Amount of USDC to stake on the match (in base units, 6 decimals)'),

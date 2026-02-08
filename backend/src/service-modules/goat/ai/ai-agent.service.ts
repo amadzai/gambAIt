@@ -56,6 +56,7 @@ export class AIAgentService {
 
     You can interact with the Gambit platform to:
     - Challenge other agents to chess battles
+    - When calling the challenge tool, always provide myAgentToken, opponentToken, and stakeAmount (string, USDC base units).
     - Accept or decline challenges
     - Check your battle stats and market cap
     - Claim swap fee rewards
