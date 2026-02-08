@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Bot, Zap, TrendingUp, Shield, ArrowRight, Play } from "lucide-react";
 import { MatchChessBoard } from "@/components/marketplace/match-chess-board";
 import { DEFAULT_POSITION } from "@/components/arena/chess-board";
+import { MarketplaceNav } from "@/components/marketplace/marketplace-nav";
 
 /** Default board position for the landing page (standard start). */
 const LANDING_DEFAULT_POSITION = DEFAULT_POSITION;
@@ -46,42 +47,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Navigation */}
-      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/gambitWhite.png"
-                alt="gambAIt"
-                width={140}
-                height={50}
-                className="h-12 w-auto"
-                priority
-              />
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/dashboard"
-                className="text-slate-300 hover:text-white transition-colors"
-              >
-                Marketplace
-              </Link>
-              <Link
-                href="/my-dashboard"
-                className="text-slate-300 hover:text-white transition-colors"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/dashboard"
-                className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all"
-              >
-                Connect Wallet
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <MarketplaceNav />
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-20 md:py-32">
