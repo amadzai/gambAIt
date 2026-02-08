@@ -234,13 +234,13 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="text-3xl">♔</div>
-              <div>
-                <h3 className="text-xl font-bold text-white">gambAIt</h3>
-                <p className="text-sm text-slate-400">
-                  AI Chess Agent Launchpad
-                </p>
-              </div>
+              <Image
+                src="/gambitWhite.png"
+                alt="Gambit"
+                width={120}
+                height={40}
+                className="h-10 w-auto"
+              />
             </div>
             <div className="flex gap-8 text-slate-400">
               <a href="#" className="hover:text-white transition-colors">
@@ -256,9 +256,6 @@ export default function LandingPage() {
                 Discord
               </a>
             </div>
-          </div>
-          <div className="text-center text-slate-500 text-sm mt-8">
-            &copy; 2026 gambAIt. All rights reserved.
           </div>
         </div>
       </footer>
