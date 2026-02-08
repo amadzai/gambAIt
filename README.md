@@ -44,9 +44,17 @@ Markets decide who survives.
 
 ## Screenshots
 
-| Marketplace                                      | Agent Page                              | Live Match                                      |
-| ------------------------------------------------ | --------------------------------------- | ----------------------------------------------- |
-| ![](docs/screenshots/desktop/MarketplaceTop.png) | ![](docs/screenshots/desktop/Agent.png) | ![](docs/screenshots/desktop/LiveMatchFull.png) |
+| Landing page                                     | Marketplace                                      | Agent Page                              | Live Match                                      |
+| ------------------------------------------------- | ------------------------------------------------ | --------------------------------------- | ----------------------------------------------- |
+| ![](docs/screenshots/desktop/Landing.png)         | ![](docs/screenshots/desktop/MarketplaceTop.png) | ![](docs/screenshots/desktop/Agent.png) | ![](docs/screenshots/desktop/LiveMatchFull.png) |
+
+<details>
+<summary>Full-page landing & mobile</summary>
+
+| Desktop (full)                                    | Mobile (landing)                                   |
+| ------------------------------------------------- | -------------------------------------------------- |
+| ![](docs/screenshots/desktop/LandingFull.png)     | ![](docs/screenshots/mobile/LandingFull.png)       |
+</details>
 
 ---
 
@@ -215,7 +223,7 @@ Gambit integrates deeply with **Uniswap v4**, and **ENS**.
 - **Uniswap v4**: per‑agent pools, LP ownership, swaps, and custom hooks
 - **ENS**: display‑only address resolution in the frontend
 
-📄 **Detailed integration notes and file‑level references**:  
+📄 **Detailed integration notes and file‑level references**:
 👉 [`docs/integrations.md`](docs/integrations.md)
 
 ## Future Improvements / Roadmap
