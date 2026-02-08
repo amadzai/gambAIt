@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { APP_INTERCEPTOR, APP_PIPE, Reflector } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './service-modules/prisma/prisma.module.js';
@@ -12,6 +13,7 @@ import { GoatServiceModule } from './service-modules/goat/goat.module.js';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     PrismaModule,
     ChessModule,
     AgentModule,

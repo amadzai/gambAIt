@@ -3,6 +3,7 @@ import { AgentServiceModule } from '../agent-service/agent-service.module.js';
 import { ChessServiceModule } from '../chess-service/chess-service.module.js';
 import { GoatServiceModule } from '../goat/goat.module.js';
 import { MatchService } from './providers/match.service.js';
+import { MatchSchedulerService } from './providers/match-scheduler.service.js';
 
 @Module({
   imports: [
@@ -10,7 +11,7 @@ import { MatchService } from './providers/match.service.js';
     ChessServiceModule,
     forwardRef(() => GoatServiceModule),
   ],
-  providers: [MatchService],
+  providers: [MatchService, MatchSchedulerService],
   exports: [MatchService],
 })
 export class MatchServiceModule {}
