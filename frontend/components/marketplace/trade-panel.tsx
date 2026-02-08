@@ -84,7 +84,7 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
   const valueDisplay = holdings != null ? holdings.value : 12.5 * price;
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 sticky top-6">
+    <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6 sticky top-6">
       <h2 className="text-xl font-bold text-white mb-6">
         Trade {agentName ? `${agentName} ` : ""}Shares
       </h2>
@@ -95,7 +95,7 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
           className={`flex-1 py-2.5 rounded-lg font-medium transition-colors !cursor-pointer ${
             tradeType === "buy"
               ? "bg-green-600 text-white"
-              : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+              : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
           }`}
         >
           Buy
@@ -105,7 +105,7 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
           className={`flex-1 py-2.5 rounded-lg font-medium transition-colors !cursor-pointer ${
             tradeType === "sell"
               ? "bg-red-600 text-white"
-              : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+              : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
           }`}
         >
           Sell
@@ -113,7 +113,7 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
       </div>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium text-slate-300 mb-2">
+        <label className="block text-sm font-medium text-neutral-300 mb-2">
           Amount (USDC)
         </label>
         <input
@@ -122,25 +122,25 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
           onChange={(e) => setTradeAmount(e.target.value)}
           placeholder="0.00"
           step="0.01"
-          className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white placeholder-neutral-500 focus:outline-none focus:border-brand-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       </div>
 
-      <div className="bg-slate-800/50 rounded-lg p-4 mb-6 space-y-2">
+      <div className="bg-neutral-800/50 rounded-lg p-4 mb-6 space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-slate-400">Price per share</span>
+          <span className="text-neutral-400">Price per share</span>
           <span className="text-white font-medium">${price.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-slate-400">Est. shares</span>
+          <span className="text-neutral-400">Est. shares</span>
           <span className="text-white font-medium">
             {tradeAmount
               ? (parseFloat(tradeAmount) / price).toFixed(2)
               : "0.00"}
           </span>
         </div>
-        <div className="flex justify-between text-sm pt-2 border-t border-slate-700">
-          <span className="text-slate-400">Platform fee (2%)</span>
+        <div className="flex justify-between text-sm pt-2 border-t border-neutral-700">
+          <span className="text-neutral-400">Platform fee (2%)</span>
           <span className="text-white font-medium">
             {tradeAmount
               ? (parseFloat(tradeAmount) * 0.02).toFixed(4)
@@ -157,7 +157,7 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
         title={!hasHandler ? "Pass onBuy/onSell to enable" : undefined}
         className={`w-full py-3.5 rounded-lg font-medium transition-all ${
           !hasHandler
-            ? "bg-slate-700 text-slate-400 cursor-not-allowed"
+            ? "bg-neutral-700 text-neutral-400 cursor-not-allowed"
             : tradeType === "buy"
               ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-500/25"
               : "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-500/25"
@@ -166,20 +166,20 @@ export function TradePanel({ price, agentName, holdings, onBuy, onSell }: TradeP
         {tradeType === "buy" ? "Buy Shares" : "Sell Shares"}
       </button>
 
-      <div className="mt-6 pt-6 border-t border-slate-800">
-        <div className="text-sm text-slate-400 mb-2">Your Holdings</div>
+      <div className="mt-6 pt-6 border-t border-neutral-800">
+        <div className="text-sm text-neutral-400 mb-2">Your Holdings</div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-slate-300">Shares</span>
+          <span className="text-neutral-300">Shares</span>
           <span className="font-bold text-white">{sharesDisplay}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-slate-300">Value</span>
-          <span className="font-bold text-violet-400">
+          <span className="text-neutral-300">Value</span>
+          <span className="font-bold text-brand-400">
             ${valueDisplay.toFixed(2)}
           </span>
         </div>
-        <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-700">
-          <span className="text-slate-300">USDC Balance</span>
+        <div className="flex justify-between items-center mt-2 pt-2 border-t border-neutral-700">
+          <span className="text-neutral-300">USDC Balance</span>
           <span className="font-bold text-green-400">
             {usdcBalance != null ? `$${usdcBalance.toFixed(2)}` : "—"}
           </span>

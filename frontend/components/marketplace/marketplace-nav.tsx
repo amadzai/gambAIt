@@ -104,13 +104,13 @@ export function MarketplaceNav() {
 
   return (
     <>
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-neutral-800 bg-neutral-900/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-5">
           <div className="relative flex items-center justify-between">
             <button
               type="button"
               onClick={() => setCreateModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg shadow-violet-500/25"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-600 to-brand-500 text-white px-6 py-2 rounded-lg font-medium hover:from-brand-700 hover:to-brand-600 transition-all shadow-lg shadow-brand-500/25"
             >
               <Plus className="w-4 h-4" />
               Create Agent
@@ -135,8 +135,8 @@ export function MarketplaceNav() {
                   href={link.href}
                   className={
                     pathname === link.href
-                      ? 'text-violet-400 font-medium'
-                      : 'text-slate-300 hover:text-white transition-colors'
+                      ? 'text-brand-400 font-medium'
+                      : 'text-neutral-300 hover:text-white transition-colors'
                   }
                 >
                   {link.label}
@@ -147,7 +147,7 @@ export function MarketplaceNav() {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
-                      className="bg-slate-800 border-slate-700 text-white px-6 py-2.5 rounded-lg text-sm hover:bg-slate-700 hover:text-white"
+                      className="bg-neutral-800 border-neutral-700 text-white px-6 py-2.5 rounded-lg text-sm hover:bg-neutral-700 hover:text-white"
                     >
                       {user?.wallet?.address
                         ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
@@ -156,11 +156,11 @@ export function MarketplaceNav() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="w-52 bg-slate-900 border-slate-700"
+                    className="w-52 bg-neutral-900 border-neutral-700"
                   >
                     {usdcAddress && (
                       <>
-                        <div className="px-2 py-2 text-xs text-slate-400 border-b border-slate-700">
+                        <div className="px-2 py-2 text-xs text-neutral-400 border-b border-neutral-700">
                           {formatUsdc(usdcBalance as bigint | undefined)} USDC
                         </div>
                         <DropdownMenuItem
@@ -192,7 +192,7 @@ export function MarketplaceNav() {
               ) : (
                 <button
                   onClick={login}
-                  className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all"
+                  className="bg-gradient-to-r from-brand-600 to-brand-500 text-white px-6 py-2 rounded-lg font-medium hover:from-brand-700 hover:to-brand-600 transition-all"
                 >
                   Connect Wallet
                 </button>
