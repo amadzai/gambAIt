@@ -30,6 +30,10 @@ export class MatchEngineService {
   ): Promise<string> {
     const raw = parameters as Record<string, unknown>;
     console.log('[MatchEngine] challenge raw parameters:', JSON.stringify(raw));
+    const myAgentToken =
+      parameters.myAgentToken ?? raw.my_agent_token;
+    const opponentToken =
+      parameters.opponentToken ?? raw.opponent_token;
     const stakeResolved =
       parameters.stakeAmount ?? raw.stake_amount ?? raw.amount ?? raw.stake;
     const stakeStr =
@@ -42,7 +46,7 @@ export class MatchEngineService {
       );
     }
     console.log(
-      `[MatchEngine] challenge called — myAgentToken=${parameters.myAgentToken}, opponentToken=${parameters.opponentToken}, stakeAmount=${stakeStr}, contract=${this.contractAddress}`,
+      `[MatchEngine] challenge called — myAgentToken=${myAgentToken}, opponentToken=${opponentToken}, stakeAmount=${stakeStr}, contract=${this.contractAddress}`,
     );
     try {
       const { hash } = await walletClient.sendTransaction({
@@ -50,8 +54,8 @@ export class MatchEngineService {
         abi: matchEngineAbi as unknown as Abi,
         functionName: 'challenge',
         args: [
-          parameters.myAgentToken,
-          parameters.opponentToken,
+          myAgentToken,
+          opponentToken,
           BigInt(stakeStr),
         ],
       });
@@ -72,15 +76,16 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: AcceptChallengeParams,
   ): Promise<string> {
+    const matchId = parameters.matchId ?? (parameters as any).match_id;
     console.log(
-      `[MatchEngine] acceptChallenge called — matchId=${parameters.matchId}, contract=${this.contractAddress}`,
+      `[MatchEngine] acceptChallenge called — matchId=${matchId}, contract=${this.contractAddress}`,
     );
     try {
       const { hash } = await walletClient.sendTransaction({
         to: this.contractAddress,
         abi: matchEngineAbi as unknown as Abi,
         functionName: 'acceptChallenge',
-        args: [parameters.matchId],
+        args: [matchId],
       });
       console.log(`[MatchEngine] acceptChallenge tx sent — hash=${hash}`);
       return `Challenge accepted. Transaction hash: ${hash}`;
@@ -98,15 +103,16 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: DeclineChallengeParams,
   ): Promise<string> {
+    const matchId = parameters.matchId ?? (parameters as any).match_id;
     console.log(
-      `[MatchEngine] declineChallenge called — matchId=${parameters.matchId}, contract=${this.contractAddress}`,
+      `[MatchEngine] declineChallenge called — matchId=${matchId}, contract=${this.contractAddress}`,
     );
     try {
       const { hash } = await walletClient.sendTransaction({
         to: this.contractAddress,
         abi: matchEngineAbi as unknown as Abi,
         functionName: 'declineChallenge',
-        args: [parameters.matchId],
+        args: [matchId],
       });
       console.log(`[MatchEngine] declineChallenge tx sent — hash=${hash}`);
       return `Challenge declined. Transaction hash: ${hash}`;
@@ -125,8 +131,12 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: SettleMatchParams,
   ): Promise<string> {
+    const raw = parameters as Record<string, unknown>;
+    const matchId = parameters.matchId ?? (raw.match_id as string);
+    const winnerToken = parameters.winnerToken ?? (raw.winner_token as string);
+    const signature = parameters.signature ?? (raw.signature as string);
     console.log(
-      `[MatchEngine] settleMatch called — matchId=${parameters.matchId}, winnerToken=${parameters.winnerToken}, contract=${this.contractAddress}`,
+      `[MatchEngine] settleMatch called — matchId=${matchId}, winnerToken=${winnerToken}, contract=${this.contractAddress}`,
     );
     try {
       const { hash } = await walletClient.sendTransaction({
@@ -134,9 +144,9 @@ export class MatchEngineService {
         abi: matchEngineAbi as unknown as Abi,
         functionName: 'settleMatch',
         args: [
-          parameters.matchId,
-          parameters.winnerToken,
-          parameters.signature,
+          matchId,
+          winnerToken,
+          signature,
         ],
       });
       console.log(`[MatchEngine] settleMatch tx sent — hash=${hash}`);
@@ -156,15 +166,17 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: CancelMatchParams,
   ): Promise<string> {
+    const matchId = parameters.matchId ?? (parameters as any).match_id;
+    const sig = parameters.signature ?? (parameters as any).signature;
     console.log(
-      `[MatchEngine] cancelMatch called — matchId=${parameters.matchId}, contract=${this.contractAddress}`,
+      `[MatchEngine] cancelMatch called — matchId=${matchId}, contract=${this.contractAddress}`,
     );
     try {
       const { hash } = await walletClient.sendTransaction({
         to: this.contractAddress,
         abi: matchEngineAbi as unknown as Abi,
         functionName: 'cancelMatch',
-        args: [parameters.matchId, parameters.signature],
+        args: [matchId, sig],
       });
       console.log(`[MatchEngine] cancelMatch tx sent — hash=${hash}`);
       return `Match cancelled. Transaction hash: ${hash}`;
@@ -183,15 +195,16 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: CancelExpiredChallengeParams,
   ): Promise<string> {
+    const matchId = parameters.matchId ?? (parameters as any).match_id;
     console.log(
-      `[MatchEngine] cancelExpiredChallenge called — matchId=${parameters.matchId}, contract=${this.contractAddress}`,
+      `[MatchEngine] cancelExpiredChallenge called — matchId=${matchId}, contract=${this.contractAddress}`,
     );
     try {
       const { hash } = await walletClient.sendTransaction({
         to: this.contractAddress,
         abi: matchEngineAbi as unknown as Abi,
         functionName: 'cancelExpiredChallenge',
-        args: [parameters.matchId],
+        args: [matchId],
       });
       console.log(
         `[MatchEngine] cancelExpiredChallenge tx sent — hash=${hash}`,
@@ -212,15 +225,16 @@ export class MatchEngineService {
     walletClient: EVMWalletClient,
     parameters: GetMatchParams,
   ): Promise<string> {
+    const matchId = parameters.matchId ?? (parameters as any).match_id;
     console.log(
-      `[MatchEngine] getMatch called — matchId=${parameters.matchId}, contract=${this.contractAddress}`,
+      `[MatchEngine] getMatch called — matchId=${matchId}, contract=${this.contractAddress}`,
     );
     try {
       const result = await walletClient.read({
         address: this.contractAddress,
         abi: matchEngineAbi as unknown as Abi,
         functionName: 'getMatch',
-        args: [parameters.matchId],
+        args: [matchId],
       });
       const replacer = (_key: string, value: unknown): unknown =>
         typeof value === 'bigint' ? value.toString() : value;

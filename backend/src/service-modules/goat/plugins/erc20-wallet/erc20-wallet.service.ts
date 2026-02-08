@@ -73,7 +73,7 @@ export class Erc20WalletService {
     parameters: GetMyTokenBalanceParams,
   ): Promise<string> {
     const wallet = walletClient.getAddress();
-    const tokenAddr = parameters.tokenAddress as `0x${string}`;
+    const tokenAddr = (parameters.tokenAddress ?? (parameters as any).token_address) as `0x${string}`;
     console.log(
       `[ERC20Wallet] getMyTokenBalance called — wallet=${wallet}, token=${tokenAddr}`,
     );
@@ -150,7 +150,7 @@ export class Erc20WalletService {
     walletClient: EVMWalletClient,
     parameters: TransferTokenParams,
   ): Promise<string> {
-    const tokenAddr = String(parameters.tokenAddress) as `0x${string}`;
+    const tokenAddr = String(parameters.tokenAddress ?? (parameters as any).token_address) as `0x${string}`;
     const amount = String(parameters.amount);
     const to = String(parameters.to);
     console.log(
