@@ -19,7 +19,7 @@ export function EvaluationBar({ evaluation }: EvaluationBarProps) {
 
   return (
     <div className="border border-white rounded-md p-2">
-      <div className="relative h-[830px] rounded-md overflow-hidden">
+      <div className="relative h-[790px] rounded-md overflow-hidden">
         <div
           className="absolute top-0 left-0 right-0 bg-neutral-800 transition-all duration-500"
           style={{ height: `${100 - whiteAdvantage}%` }}
