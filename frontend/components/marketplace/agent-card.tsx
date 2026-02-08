@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import type { MarketplaceAgent } from "@/types/marketplace";
@@ -39,15 +40,25 @@ export function AgentCard({ agent }: AgentCardProps) {
       <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 hover:border-violet-500/50 transition-all hover:shadow-lg hover:shadow-violet-500/10 cursor-pointer group">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
-              style={{
-                background: `${agent.color}20`,
-                border: `2px solid ${agent.color}`,
-              }}
-            >
-              {agent.avatar}
-            </div>
+            {agent.profileImage ? (
+              <Image
+                src={agent.profileImage}
+                alt={agent.name}
+                width={70}
+                height={70}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+            ) : (
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
+                style={{
+                  background: `${agent.color}20`,
+                  border: `2px solid ${agent.color}`,
+                }}
+              >
+                {agent.avatar}
+              </div>
+            )}
             <div>
               <h3 className="font-bold text-white group-hover:text-violet-400 transition-colors">
                 {agent.name}

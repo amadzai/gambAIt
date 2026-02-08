@@ -38,8 +38,8 @@ export function LiveMatchCard({ match }: LiveMatchCardProps) {
               <Image
                 src={match.white.profileImage}
                 alt={match.white.name}
-                width={32}
-                height={32}
+                width={64}
+                height={64}
                 className="w-8 h-8 object-cover"
               />
             ) : (
