@@ -81,7 +81,7 @@ export default function MatchPage() {
           <div className="space-y-6">
             {/* Black Player Info */}
             <div
-              className={`bg-neutral-900/50 border rounded-xl p-4 transition-all ${
+              className={`bg-neutral-900/50 border rounded-xl p-1 transition-all ${
                 showThinking && currentTurn === 'black'
                   ? 'border-brand-400 shadow-lg shadow-brand-400/20'
                   : 'border-neutral-800'
@@ -127,7 +127,7 @@ export default function MatchPage() {
             </div>
 
             {/* Chess Board */}
-            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-1">
               <div>
                 {isLoading ? (
                   <div className="flex items-center justify-center h-[400px] text-neutral-400">
