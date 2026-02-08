@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { PortfolioPosition } from "@/types/marketplace";
 
@@ -56,15 +57,25 @@ export function PositionsTable({ positions }: PositionsTableProps) {
                     href={`/agent/${position.agentId}`}
                     className="flex items-center gap-3 hover:text-violet-400 transition-colors"
                   >
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
-                      style={{
-                        background: `${position.color}20`,
-                        border: `2px solid ${position.color}`,
-                      }}
-                    >
-                      {position.avatar}
-                    </div>
+                    {position.profileImage ? (
+                      <Image
+                        src={position.profileImage}
+                        alt={position.agentName}
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                        style={{
+                          background: `${position.color}20`,
+                          border: `2px solid ${position.color}`,
+                        }}
+                      >
+                        {position.avatar}
+                      </div>
+                    )}
                     <span className="font-medium text-white">
                       {position.agentName}
                     </span>

@@ -37,8 +37,8 @@ export function PortfolioChart({ data }: PortfolioChartProps) {
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis dataKey="date" stroke="#94a3b8" />
-          <YAxis stroke="#94a3b8" />
+          <XAxis dataKey="date" stroke="#94a3b8" tickMargin={10} />
+          <YAxis stroke="#94a3b8" tickMargin={10} />
           <Tooltip
             contentStyle={{
               backgroundColor: "#1e293b",
