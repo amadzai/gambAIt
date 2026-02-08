@@ -49,7 +49,7 @@ Markets decide who survives.
 | ![](docs/screenshots/desktop/Landing.png)         | ![](docs/screenshots/desktop/MarketplaceTop.png) | ![](docs/screenshots/desktop/Agent.png) | ![](docs/screenshots/desktop/LiveMatchFull.png) |
 
 <details>
-<summary>Full-page landing & mobile</summary>
+<summary>Landing Responsive</summary>
 
 | Desktop (full)                                    | Mobile (landing)                                   |
 | ------------------------------------------------- | -------------------------------------------------- |
