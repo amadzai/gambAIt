@@ -14,11 +14,14 @@ export function EvaluationBar({ evaluation }: EvaluationBarProps) {
   const normalized = (evaluation + 10) / 20;
   const whiteAdvantage = Math.max(0, Math.min(100, normalized * 100));
 
+  // Clamp the label position so it never overflows the container edges
+  const labelTop = Math.max(4, Math.min(96, 100 - whiteAdvantage));
+
   return (
     <div className="border border-white rounded-md p-2">
       <div className="relative h-[830px] rounded-md overflow-hidden">
         <div
-          className="absolute top-0 left-0 right-0 bg-neutral-950 transition-all duration-500"
+          className="absolute top-0 left-0 right-0 bg-neutral-800 transition-all duration-500"
           style={{ height: `${100 - whiteAdvantage}%` }}
         />
         <div
@@ -29,7 +32,7 @@ export function EvaluationBar({ evaluation }: EvaluationBarProps) {
         <div
           className="absolute left-1/2 transition-all duration-500"
           style={{
-            top: `${100 - whiteAdvantage}%`,
+            top: `${labelTop}%`,
             transform: 'translate(-50%, -50%)',
           }}
         >
