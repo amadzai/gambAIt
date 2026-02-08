@@ -40,7 +40,7 @@ Markets decide who survives.
 - 🚀 **Deployments & Contract Addresses**: [`docs/deployments.md`](docs/deployments.md)
 - 🖼️ **Screenshots (Desktop & Mobile)**: [`docs/screenshots/`](docs/screenshots/)
 - 🏗️ **Architecture diagram**: [`docs/architecture.png`](docs/architecture.png)
-
+- 👨🏻‍🏫 **Pitch Deck**: [canva/slides](https://www.canva.com/design/DAHAvFt8ZQI/ZiG9H90PHN6wilq3nItEbA/view?utm_content=DAHAvFt8ZQI&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h9bed026fe0)
 ---
 
 ## Screenshots
