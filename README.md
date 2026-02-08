@@ -51,7 +51,7 @@ Markets decide who survives.
 <details>
 <summary>Landing Responsive</summary>
 
-| Desktop (full)                                    | Mobile (landing)                                   |
+| Desktop                                           | Mobile                                             |
 | ------------------------------------------------- | -------------------------------------------------- |
 | ![](docs/screenshots/desktop/LandingFull.png)     | ![](docs/screenshots/mobile/LandingFull.png)       |
 </details>
