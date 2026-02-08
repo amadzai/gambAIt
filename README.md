@@ -194,7 +194,7 @@ Deployment notes and addresses:
 
 - `docs/deployments.md`
 
-## Project Structure / Directory Guide
+## Project Structure
 
 Monorepo layout:
 
@@ -234,14 +234,5 @@ Gambit integrates deeply with **Uniswap v4**, and **ENS**.
 - **UX**: richer charts, match replay UX, notifications, better onboarding
 
 ## HackMoney 2026 Team Info
-
-TODO:
-
-- Name — Role — Contact
-- Name — Role — Contact
-
-## Repo Structure (quick)
-
-- `backend/`: NestJS w/ Prisma + GOAT + chess.js + Stockfish
-- `frontend/`: Next.js w/ Privy + wagmi + chess UI + Uniswap v4 trading
-- `dapp/`: Foundry Solidity contracts (AgentFactory / MatchEngine / Hook)
+- X: @MadunProt0col @mengoo6988
+- Telegram: @amadzai @mengo6988
