@@ -322,6 +322,14 @@ Do this now.`,
   }
 
   /**
+   * Returns true when there is at least one in-flight match stream (i.e. a game
+   * loop is still running). Used by the scheduler to avoid overlapping matches.
+   */
+  hasActiveMatch(): boolean {
+    return this.streams.size > 0;
+  }
+
+  /**
    * Get the SSE observable for an active match.
    */
   getMatchStream(gameId: string): Observable<MessageEvent> {
