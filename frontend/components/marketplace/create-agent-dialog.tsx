@@ -32,7 +32,15 @@ const PLAYSTYLES: { value: AgentPlaystyle; name: string; desc: string }[] = [
   { value: 'POSITIONAL', name: 'Positional', desc: 'Long-term strategic play' },
 ];
 
-const SAN_OPENINGS = ['e4', 'd4', 'c4', 'Nf3', 'g3', 'b3', 'f4'] as const;
+const OPENINGS: { san: string; uci: string }[] = [
+  { san: 'e4', uci: 'e2e4' },
+  { san: 'd4', uci: 'd2d4' },
+  { san: 'c4', uci: 'c2c4' },
+  { san: 'Nf3', uci: 'g1f3' },
+  { san: 'g3', uci: 'g2g3' },
+  { san: 'b3', uci: 'b2b3' },
+  { san: 'f4', uci: 'f2f4' },
+];
 
 const DEFAULT_PLAYSTYLE: AgentPlaystyle = 'AGGRESSIVE';
 
@@ -265,9 +273,9 @@ export function CreateAgentDialog({
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-4 pr-10 py-3 text-white focus:outline-none focus:border-violet-500 transition-colors appearance-none disabled:opacity-50"
               >
                 <option value="">None</option>
-                {SAN_OPENINGS.map((move) => (
-                  <option key={move} value={move}>
-                    {move}
+                {OPENINGS.map((o) => (
+                  <option key={o.uci} value={o.uci}>
+                    {o.san}
                   </option>
                 ))}
               </select>
