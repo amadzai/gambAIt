@@ -143,3 +143,8 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Hide Next.js dev error overlay */
+nextjs-portal {
+  display: none !important;
+}
