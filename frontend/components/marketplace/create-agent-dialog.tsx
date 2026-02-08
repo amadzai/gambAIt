@@ -313,7 +313,7 @@ export function CreateAgentDialog({
 
           <div className="bg-brand-500/10 border border-brand-500/30 rounded-lg p-4">
             <p className="text-sm text-brand-200">
-              Creating an agent requires a 100 USDC deposit. Your agent will be
+              Creating an agent requires a 1000 USDC deposit. Your agent will be
               deployed on-chain with its own ERC-20 token.
             </p>
           </div>
