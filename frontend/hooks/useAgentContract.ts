@@ -58,6 +58,7 @@ export interface UseAgentContractResult {
 export function useAgentContract(
   tokenAddress: string | null | undefined,
   agentId?: string,
+  onEloUpdated?: () => void,
 ): UseAgentContractResult {
   const { address: userAddress } = useWallet();
   const config = useConfig();
@@ -205,6 +206,7 @@ export function useAgentContract(
           const agent = await apiService.agent.getById(agentId);
           const newElo = computeNewElo(agent.elo ?? BASE_ELO_DEFAULT, parseFloat(amount), true);
           await apiService.agent.update(agentId, { elo: newElo });
+          onEloUpdated?.();
         }
 
         refetch();
@@ -221,6 +223,7 @@ export function useAgentContract(
       config,
       refetch,
       agentId,
+      onEloUpdated,
     ],
   );
 
@@ -286,6 +289,7 @@ export function useAgentContract(
           const agent = await apiService.agent.getById(agentId);
           const newElo = computeNewElo(agent.elo ?? BASE_ELO_DEFAULT, parseFloat(amount), false);
           await apiService.agent.update(agentId, { elo: newElo });
+          onEloUpdated?.();
         }
 
         refetch();
@@ -302,6 +306,7 @@ export function useAgentContract(
       config,
       refetch,
       agentId,
+      onEloUpdated,
     ],
   );
 

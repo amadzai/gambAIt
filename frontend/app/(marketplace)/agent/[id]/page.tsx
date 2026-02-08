@@ -29,13 +29,13 @@ export default function AgentDetailPage() {
   const id = params.id as string;
 
   // ── Backend data ──────────────────────────────────────────────────
-  const { agent, recentMatches, isLoading, error } = useAgent(id);
+  const { agent, recentMatches, isLoading, error, refetch: refetchAgent } = useAgent(id);
 
-  console.log("agent: ", agent)
   // ── Contract data (price, holdings, trading) ──────────────────────
   const { price, marketCap, holdings, buy, sell } = useAgentContract(
     agent?.tokenAddress,
     id,
+    refetchAgent,
   );
 
   // ── Derived display values ────────────────────────────────────────
