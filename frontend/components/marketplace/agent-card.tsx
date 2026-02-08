@@ -22,10 +22,10 @@ export function AgentCard({ agent }: AgentCardProps) {
     value,
   }));
 
-  const winRate = (
-    (agent.wins / (agent.wins + agent.losses + agent.draws)) *
-    100
-  ).toFixed(1);
+  const totalGames = agent.wins + agent.losses + agent.draws;
+  const winRate = totalGames > 0
+    ? ((agent.wins / totalGames) * 100).toFixed(1)
+    : null;
 
   return (
     <Link href={`/agent/${agent.id}`}>
@@ -92,7 +92,7 @@ export function AgentCard({ agent }: AgentCardProps) {
         <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-800">
           <div>
             <div className="text-xs text-slate-400 mb-1">Win Rate</div>
-            <div className="font-semibold text-white">{winRate}%</div>
+            <div className="font-semibold text-white">{winRate !== null ? `${winRate}%` : '—'}</div>
           </div>
           <div>
             <div className="text-xs text-slate-400 mb-1">Matches</div>

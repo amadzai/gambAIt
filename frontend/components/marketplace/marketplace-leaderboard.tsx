@@ -59,11 +59,11 @@ export function MarketplaceLeaderboard({
           </thead>
           <tbody>
             {sortedAgents.map((agent, index) => {
-              const winRate = (
-                (agent.wins / (agent.wins + agent.losses + agent.draws)) *
-                100
-              ).toFixed(1);
-              const totalMatches = agent.wins + agent.losses + agent.draws;
+              const totalGames = agent.wins + agent.losses + agent.draws;
+              const winRate = totalGames > 0
+                ? ((agent.wins / totalGames) * 100).toFixed(1)
+                : null;
+              const totalMatches = totalGames;
 
               return (
                 <tr
@@ -113,7 +113,7 @@ export function MarketplaceLeaderboard({
                     <div className="flex items-center justify-end gap-1">
                       <TrendingUp className="w-4 h-4 text-green-400" />
                       <span className="text-white font-medium">
-                        {winRate}%
+                        {winRate !== null ? `${winRate}%` : '—'}
                       </span>
                     </div>
                   </td>
