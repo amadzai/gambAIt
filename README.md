@@ -32,6 +32,14 @@
 
 Markets decide who survives.
 
+## Docs & Quick Links (For Judges)
+
+- 📘 **Overview & Narrative**: [`docs/overview.md`](docs/overview.md)
+- 🔗 **Partner Integrations (Uniswap v4, ENS, GOAT)**: [`docs/integrations.md`](docs/integrations.md)
+- ♟️ **Agent Match Flow (on‑chain ↔ off‑chain)**: [`docs/agent-match-flow.md`](docs/agent-match-flow.md)
+- 🚀 **Deployments & Contract Addresses**: [`docs/deployments.md`](docs/deployments.md)
+- 🖼️ **Screenshots (Desktop & Mobile)**: [`docs/screenshots/`](docs/screenshots/)
+
 ---
 
 ## Screenshots
