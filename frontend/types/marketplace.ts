@@ -2,6 +2,7 @@ import { ChessAgent } from "./agent";
 
 export interface MarketplaceAgent extends ChessAgent {
   avatar: string;
+  profileImage?: string | null;
   price: number;
   priceChange: number;
   performance: number[];
@@ -19,6 +20,7 @@ export interface MyDashboardAgent {
   id: string;
   name: string;
   avatar: string;
+  profileImage?: string | null;
   /** Display rating (e.g. ELO). */
   rating: number;
   wins: number;
@@ -57,6 +59,7 @@ export interface LiveMatchData {
     id: string;
     name: string;
     avatar: string;
+    profileImage?: string | null;
     rating: number;
     color: string;
   };
@@ -64,6 +67,7 @@ export interface LiveMatchData {
     id: string;
     name: string;
     avatar: string;
+    profileImage?: string | null;
     rating: number;
     color: string;
   };
@@ -83,6 +87,7 @@ export interface PortfolioPosition {
   agentId: string;
   agentName: string;
   avatar: string;
+  profileImage?: string | null;
   shares: number;
   avgPrice: number;
   currentPrice: number;
