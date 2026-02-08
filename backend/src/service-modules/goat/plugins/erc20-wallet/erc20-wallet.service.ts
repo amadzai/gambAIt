@@ -184,14 +184,22 @@ export class Erc20WalletService {
 
   @Tool({
     description:
-      'Approve a spender to spend USDC from the agent wallet. Provide the spender address and amount in human-readable USDC (e.g. "10" for 10 USDC).',
+      'Approve a spender to spend USDC from the agent wallet. You MUST provide both "spender" (a valid 0x… Ethereum address) and "amount" in human-readable USDC (e.g. "10" for 10 USDC).',
   })
   async approveUsdc(
     walletClient: EVMWalletClient,
     parameters: ApproveUsdcParams,
   ): Promise<string> {
     const amount = String(parameters.amount);
-    const spender = String(parameters.spender);
+    const spender = parameters.spender ? String(parameters.spender) : undefined;
+
+    // Validate spender before attempting the on-chain call
+    if (!spender || !/^0x[a-fA-F0-9]{40}$/.test(spender)) {
+      const errMsg = `Error: "spender" is missing or invalid (got "${spender}"). You must provide a valid Ethereum address (0x followed by 40 hex characters) as the "spender" parameter.`;
+      console.error(`[ERC20Wallet] approveUsdc rejected: ${errMsg}`);
+      return errMsg;
+    }
+
     const baseUnits = parseUnits(amount, USDC_DECIMALS);
     console.log(
       `[ERC20Wallet] approveUsdc called — spender=${spender}, amount=${amount} USDC (${baseUnits} base units), usdc=${this.usdcAddress}`,

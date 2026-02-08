@@ -147,11 +147,14 @@ Do this now.`,
 
     this.logger.log(`Challenge GOAT result: ${challengeResult}`);
 
-    // 3. Extract on-chain matchId from challenge tx receipt
-    const txHash = this.extractTxHash(challengeResult);
-    if (!txHash) {
+    // 3. Extract on-chain matchId from challenge tx receipt.
+    //    The LLM response may contain multiple tx hashes (e.g. approve + challenge).
+    //    Try each one (last first, since challenge comes after approve) until we
+    //    find the ChallengeCreated event.
+    const txHashes = this.extractAllTxHashes(challengeResult);
+    if (txHashes.length === 0) {
       throw new BadRequestException(
-        `Could not extract transaction hash from challenge result: ${challengeResult}`,
+        `Could not extract any transaction hash from challenge result: ${challengeResult}`,
       );
     }
 
@@ -160,44 +163,53 @@ Do this now.`,
       transport: http(process.env.RPC_URL ?? 'https://sepolia.base.org'),
     });
 
-    const receipt = await publicClient.getTransactionReceipt({
-      hash: txHash as Hex,
-    });
-
     let onChainMatchId: string | undefined;
-    for (const log of receipt.logs) {
-      try {
-        const decoded = decodeEventLog({
-          abi: matchEngineAbi,
-          data: log.data,
-          topics: log.topics,
-        });
-        if (decoded.eventName === 'ChallengeCreated') {
-          onChainMatchId = (decoded.args as { matchId: string }).matchId;
-          break;
+    for (const candidateHash of txHashes.reverse()) {
+      const receipt = await publicClient.getTransactionReceipt({
+        hash: candidateHash as Hex,
+      });
+
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: matchEngineAbi,
+            data: log.data,
+            topics: log.topics,
+          });
+          if (decoded.eventName === 'ChallengeCreated') {
+            onChainMatchId = (decoded.args as { matchId: string }).matchId;
+            break;
+          }
+        } catch {
+          // Not a ChallengeCreated event, skip
         }
-      } catch {
-        // Not a ChallengeCreated event, skip
       }
+
+      if (onChainMatchId) break;
     }
 
     if (!onChainMatchId) {
       throw new BadRequestException(
-        'ChallengeCreated event not found in the transaction receipt',
+        `ChallengeCreated event not found in any transaction receipt. Checked hashes: ${txHashes.join(', ')}`,
       );
     }
 
     this.logger.log(`On-chain matchId extracted: ${onChainMatchId}`);
 
     // 4. Create Match record in DB (status: PENDING)
-    const matchRecord = await this.prisma.match.create({
-      data: {
+    // Use upsert to handle the race condition where the MatchEventListener's
+    // handleChallengeCreated may have already created this record via the
+    // WebSocket event before we reach this point.
+    const matchRecord = await this.prisma.match.upsert({
+      where: { onChainMatchId },
+      create: {
         onChainMatchId,
         agent1TokenAddress: challenger.tokenAddress,
         agent2TokenAddress: opponent.tokenAddress,
         stakeAmount,
         status: 'PENDING',
       },
+      update: {},
     });
 
     this.logger.log(
@@ -211,11 +223,11 @@ Do this now.`,
   }
 
   /**
-   * Extract a transaction hash (0x followed by 64 hex chars) from a string.
+   * Extract all transaction hashes (0x followed by 64 hex chars) from a string.
+   * Returns them in the order they appear.
    */
-  private extractTxHash(text: string): string | null {
-    const match = text.match(/0x[a-fA-F0-9]{64}/);
-    return match ? match[0] : null;
+  private extractAllTxHashes(text: string): string[] {
+    return [...text.matchAll(/0x[a-fA-F0-9]{64}/g)].map((m) => m[0]);
   }
 
   /**

@@ -70,7 +70,7 @@ export class MatchEngineService {
 
   @Tool({
     description:
-      'Accept a pending chess match challenge. The matching stake is automatically taken from your USDC balance.',
+      'Accept a pending chess match challenge. You MUST provide "matchId" — the bytes32 hex string (0x…) identifying the challenge. The matching stake is automatically taken from your USDC balance.',
   })
   async acceptChallenge(
     walletClient: EVMWalletClient,
@@ -80,6 +80,14 @@ export class MatchEngineService {
     console.log(
       `[MatchEngine] acceptChallenge called — matchId=${matchId}, contract=${this.contractAddress}`,
     );
+
+    // Validate matchId before attempting the on-chain call
+    if (!matchId || typeof matchId !== 'string' || !/^0x[a-fA-F0-9]{64}$/.test(matchId)) {
+      const errMsg = `Error: "matchId" is missing or invalid (got "${matchId}"). You must provide the bytes32 match ID (0x followed by 64 hex characters) as the "matchId" parameter.`;
+      console.error(`[MatchEngine] acceptChallenge rejected: ${errMsg}`);
+      return errMsg;
+    }
+
     try {
       const { hash } = await walletClient.sendTransaction({
         to: this.contractAddress,

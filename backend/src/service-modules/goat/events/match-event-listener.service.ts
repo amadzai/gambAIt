@@ -153,19 +153,23 @@ export class MatchEventListenerService
       });
 
       if (!matchRecord) {
-        // External challenge — create the DB record
+        // External challenge or race condition — upsert the DB record to avoid
+        // unique constraint violations if MatchService.challenge() creates it
+        // concurrently.
         const humanStake = stakeAmount ? formatUnits(stakeAmount, 6) : '0';
-        matchRecord = await this.prisma.match.create({
-          data: {
+        matchRecord = await this.prisma.match.upsert({
+          where: { onChainMatchId: matchId },
+          create: {
             onChainMatchId: matchId,
             agent1TokenAddress: agent1Token,
             agent2TokenAddress: agent2Token,
             stakeAmount: humanStake,
             status: 'PENDING',
           },
+          update: {},
         });
         this.logger.log(
-          `[ChallengeCreated] Created Match record for external challenge: ${matchRecord.id}`,
+          `[ChallengeCreated] Upserted Match record for challenge: ${matchRecord.id}`,
         );
       }
 
