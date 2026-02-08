@@ -13,12 +13,16 @@ import {
   computePoolId,
   getAgentTokenPrice,
   isBuyZeroForOne,
+  computeNewElo,
   AGENT_TOKEN_TOTAL_SUPPLY,
   TOKEN_DECIMALS,
   MIN_SQRT_PRICE_LIMIT,
   MAX_SQRT_PRICE_LIMIT,
   HOOKLESS_HOOKS,
 } from '@/lib/contracts/uniswap';
+import { apiService } from '@/utils/apiService';
+
+const BASE_ELO_DEFAULT = 1000;
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -53,6 +57,7 @@ export interface UseAgentContractResult {
 
 export function useAgentContract(
   tokenAddress: string | null | undefined,
+  agentId?: string,
 ): UseAgentContractResult {
   const { address: userAddress } = useWallet();
   const config = useConfig();
@@ -183,7 +188,25 @@ export function useAgentContract(
           chainId: baseSepolia.id,
         });
 
-        // 3. Refetch balances
+        // 3. Sync ELO
+        // --- Market-cap-based ELO (use once pool price is correct) ---
+        // const { data: newSlot0 } = await refetchPrice();
+        // if (newSlot0 && agentId) {
+        //   const newSqrt = newSlot0[0] as bigint;
+        //   if (newSqrt > BigInt(0)) {
+        //     const newPrice = getAgentTokenPrice(newSqrt, tokenAddr!, addresses.usdc);
+        //     const newMcap = newPrice * AGENT_TOKEN_TOTAL_SUPPLY;
+        //     const newElo = marketCapToElo(newMcap);
+        //     await apiService.agent.update(agentId, { elo: newElo });
+        //   }
+        // }
+
+        if (agentId) {
+          const agent = await apiService.agent.getById(agentId);
+          const newElo = computeNewElo(agent.elo ?? BASE_ELO_DEFAULT, parseFloat(amount), true);
+          await apiService.agent.update(agentId, { elo: newElo });
+        }
+
         refetch();
       } finally {
         setIsBuying(false);
@@ -197,6 +220,7 @@ export function useAgentContract(
       writeContractAsync,
       config,
       refetch,
+      agentId,
     ],
   );
 
@@ -245,6 +269,25 @@ export function useAgentContract(
           chainId: baseSepolia.id,
         });
 
+        // 3. Sync ELO
+        // --- Market-cap-based ELO (use once pool price is correct) ---
+        // const { data: newSlot0 } = await refetchPrice();
+        // if (newSlot0 && agentId) {
+        //   const newSqrt = newSlot0[0] as bigint;
+        //   if (newSqrt > BigInt(0)) {
+        //     const newPrice = getAgentTokenPrice(newSqrt, tokenAddr!, addresses.usdc);
+        //     const newMcap = newPrice * AGENT_TOKEN_TOTAL_SUPPLY;
+        //     const newElo = marketCapToElo(newMcap);
+        //     await apiService.agent.update(agentId, { elo: newElo });
+        //   }
+        // }
+
+        if (agentId) {
+          const agent = await apiService.agent.getById(agentId);
+          const newElo = computeNewElo(agent.elo ?? BASE_ELO_DEFAULT, parseFloat(amount), false);
+          await apiService.agent.update(agentId, { elo: newElo });
+        }
+
         refetch();
       } finally {
         setIsSelling(false);
@@ -258,6 +301,7 @@ export function useAgentContract(
       writeContractAsync,
       config,
       refetch,
+      agentId,
     ],
   );
 

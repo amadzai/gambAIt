@@ -35,6 +35,7 @@ export default function AgentDetailPage() {
   // ── Contract data (price, holdings, trading) ──────────────────────
   const { price, marketCap, holdings, buy, sell } = useAgentContract(
     agent?.tokenAddress,
+    id,
   );
 
   // ── Derived display values ────────────────────────────────────────
