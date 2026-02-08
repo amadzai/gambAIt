@@ -6,20 +6,41 @@ import { MarketplaceNav } from "@/components/marketplace/marketplace-nav";
 import { PortfolioChart } from "@/components/marketplace/portfolio-chart";
 import { PositionsTable } from "@/components/marketplace/positions-table";
 import { MyAgentsGrid } from "@/components/marketplace/my-agents-grid";
-import {
-  mockPortfolio,
-  mockPortfolioHistory,
-  mockMyAgents,
-} from "@/lib/marketplace-mock-data";
+import { useMyDashboard } from "@/hooks";
+import { mockPortfolioHistory } from "@/lib/marketplace-mock-data";
 
 export default function MyDashboardPage() {
   const [activeTab, setActiveTab] = useState<"portfolio" | "agents">(
     "portfolio"
   );
 
-  const totalValue = mockPortfolio.reduce((sum, p) => sum + p.value, 0);
-  const totalPnL = mockPortfolio.reduce((sum, p) => sum + p.pnl, 0);
+  const { positions, myAgents, isLoading, error } = useMyDashboard();
+
+  const totalValue = positions.reduce((sum, p) => sum + p.value, 0);
+  const totalPnL = positions.reduce((sum, p) => sum + p.pnl, 0);
   const totalChangePercent = totalPnL > 0 ? ((totalPnL / (totalValue - totalPnL)) * 100) : 0;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <MarketplaceNav />
+        <div className="flex items-center justify-center h-[60vh] text-slate-400">
+          Loading dashboard...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <MarketplaceNav />
+        <div className="flex items-center justify-center h-[60vh] text-red-400">
+          {error.message}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -28,8 +49,6 @@ export default function MyDashboardPage() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Portfolio Overview */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-6">My Dashboard</h2>
-
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
@@ -77,7 +96,7 @@ export default function MyDashboardPage() {
                 <Users className="w-5 h-5 text-slate-400" />
               </div>
               <div className="text-3xl font-bold text-white mb-1">
-                {mockPortfolio.length}
+                {positions.length}
               </div>
               <div className="text-sm text-slate-400">Active Positions</div>
             </div>
@@ -87,7 +106,7 @@ export default function MyDashboardPage() {
                 <Settings className="w-5 h-5 text-slate-400" />
               </div>
               <div className="text-3xl font-bold text-white mb-1">
-                {mockMyAgents.length}
+                {myAgents.length}
               </div>
               <div className="text-sm text-slate-400">Created Agents</div>
             </div>
@@ -125,9 +144,9 @@ export default function MyDashboardPage() {
 
         {/* Content */}
         {activeTab === "portfolio" ? (
-          <PositionsTable positions={mockPortfolio} />
+          <PositionsTable positions={positions} />
         ) : (
-          <MyAgentsGrid agents={mockMyAgents} />
+          <MyAgentsGrid agents={myAgents} />
         )}
       </div>
     </div>

@@ -1,12 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { TrendingUp, TrendingDown, Settings, Plus } from "lucide-react";
 import type { MyDashboardAgent } from "@/types/marketplace";
 
 /**
  * Props for the my-agents grid. Expects MyDashboardAgent[] from @/types/marketplace.
  */
+function formatMarketCap(value: number): string {
+  if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(1) + 'B';
+  if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + 'M';
+  if (value >= 1_000) return (value / 1_000).toFixed(1) + 'K';
+  return value.toFixed(2);
+}
+
 export interface MyAgentsGridProps {
   /** List of agents owned or managed by the user (MyDashboardAgent from @/types/marketplace). */
   agents: MyDashboardAgent[];
@@ -18,7 +26,7 @@ export interface MyAgentsGridProps {
 export function MyAgentsGrid({ agents }: MyAgentsGridProps) {
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-start">
         <Link
           href="/dashboard"
           className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-violet-700 hover:to-purple-700 transition-all"
@@ -43,15 +51,25 @@ export function MyAgentsGrid({ agents }: MyAgentsGridProps) {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-2xl"
-                    style={{
-                      background: `${agent.color}20`,
-                      border: `2px solid ${agent.color}`,
-                    }}
-                  >
-                    {agent.avatar}
-                  </div>
+                  {agent.profileImage ? (
+                    <Image
+                      src={agent.profileImage}
+                      alt={agent.name}
+                      width={56}
+                      height={56}
+                      className="w-14 h-14 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-14 h-14 rounded-full flex items-center justify-center text-2xl"
+                      style={{
+                        background: `${agent.color}20`,
+                        border: `2px solid ${agent.color}`,
+                      }}
+                    >
+                      {agent.avatar}
+                    </div>
+                  )}
                   <div>
                     <h3 className="font-bold text-white text-lg">
                       {agent.name}
@@ -87,7 +105,7 @@ export function MyAgentsGrid({ agents }: MyAgentsGridProps) {
                 <div>
                   <div className="text-xs text-slate-400 mb-1">Market Cap</div>
                   <div className="font-semibold text-white">
-                    ${(agent.marketCap / 1000).toFixed(1)}K
+                    ${formatMarketCap(agent.marketCap)}
                   </div>
                 </div>
                 <div>
