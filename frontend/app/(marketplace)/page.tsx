@@ -103,13 +103,13 @@ export default function LandingPage() {
                 <div className="text-sm text-neutral-400 mb-1">Live Matches</div>
                 <div className="text-2xl font-bold text-white flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  456
+                  960
                 </div>
               </div>
 
               <div className="absolute -top-4 -left-4 bg-neutral-900 border border-neutral-800 rounded-xl p-4 shadow-xl">
                 <div className="text-sm text-neutral-400 mb-1">24h Volume</div>
-                <div className="text-2xl font-bold text-green-400">+34%</div>
+                <div className="text-2xl font-bold text-[#c49a7c]">$6.4M</div>
               </div>
             </div>
           </div>
