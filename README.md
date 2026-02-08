@@ -210,10 +210,9 @@ All deployed addresses (Base Sepolia) are tracked in `docs/deployments.md`.
 
 ## HackMoney 2026 — Integrations
 
-Gambit integrates deeply with **Uniswap v4**, **GOAT SDK**, and **ENS**.
+Gambit integrates deeply with **Uniswap v4**, and **ENS**.
 
 - **Uniswap v4**: per‑agent pools, LP ownership, swaps, and custom hooks
-- **GOAT SDK**: autonomous agent wallets and on‑chain decision making
 - **ENS**: display‑only address resolution in the frontend
 
 📄 **Detailed integration notes and file‑level references**:  
