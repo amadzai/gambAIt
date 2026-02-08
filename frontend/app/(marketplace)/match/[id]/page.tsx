@@ -9,7 +9,7 @@ import { MarketplaceNav } from '@/components/marketplace/marketplace-nav';
 import { MatchChessBoard } from '@/components/marketplace/match-chess-board';
 import { EvaluationBar } from '@/components/marketplace/evaluation-bar';
 import { MoveHistoryPanel } from '@/components/marketplace/move-history-panel';
-import { useMatchGame } from '@/hooks';
+import { useMatchGame, useAgentContract } from '@/hooks';
 import { getOpeningName } from '@/lib/opening-names';
 import { DEFAULT_POSITION } from '@/components/arena/chess-board';
 
@@ -46,6 +46,11 @@ export default function MatchPage() {
     goBack,
   } = useMatchGame(id);
 
+  const { price: whitePrice, isLoadingPrice: isLoadingWhitePrice } =
+    useAgentContract(whiteAgent?.tokenAddress, whiteAgent?.id);
+  const { price: blackPrice, isLoadingPrice: isLoadingBlackPrice } =
+    useAgentContract(blackAgent?.tokenAddress, blackAgent?.id);
+
   const currentTurn =
     game?.turn === 'WHITE' ? 'white' : game?.turn === 'BLACK' ? 'black' : null;
 
@@ -69,7 +74,9 @@ export default function MatchPage() {
       <MarketplaceNav />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className={`grid grid-cols-1 gap-6 ${isLive ? 'lg:grid-cols-[60px_1fr_320px]' : 'lg:grid-cols-[1fr_320px]'}`}>
+        <div
+          className={`grid grid-cols-1 gap-6 ${isLive ? 'lg:grid-cols-[60px_1fr_320px]' : 'lg:grid-cols-[1fr_320px]'}`}
+        >
           {/* Left Column - Evaluation Bar (live matches only, hidden on mobile) */}
           {isLive && (
             <div className="hidden lg:block">
@@ -231,7 +238,9 @@ export default function MatchPage() {
                   )}
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-neutral-400">Match Outcome</span>
+                  <span className="text-sm text-neutral-400">
+                    Match Outcome
+                  </span>
                   <span className="text-sm font-medium text-white">
                     {matchOutcome}
                   </span>
@@ -250,10 +259,13 @@ export default function MatchPage() {
             <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4">
               <h3 className="font-bold text-white mb-4 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-brand-400" />
-                Live Trading
+                Live Prices
               </h3>
               <div className="space-y-3">
-                <div className="bg-neutral-800/50 rounded-lg p-3">
+                <Link
+                  href={`/agent/${whiteAgent?.id ?? ''}`}
+                  className="block bg-neutral-800/50 rounded-lg p-3 cursor-pointer hover:bg-neutral-700/50 transition-colors"
+                >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm text-neutral-400">
                       {whiteAgent?.name ?? 'White'}
@@ -262,9 +274,18 @@ export default function MatchPage() {
                       +2.3%
                     </span>
                   </div>
-                  <div className="text-lg font-bold text-white">$2.48</div>
-                </div>
-                <div className="bg-neutral-800/50 rounded-lg p-3">
+                  <div className="text-lg font-bold text-white">
+                    {isLoadingWhitePrice
+                      ? '...'
+                      : whitePrice != null
+                        ? `$${whitePrice.toFixed(2)}`
+                        : '—'}
+                  </div>
+                </Link>
+                <Link
+                  href={`/agent/${blackAgent?.id ?? ''}`}
+                  className="block bg-neutral-800/50 rounded-lg p-3 cursor-pointer hover:bg-neutral-700/50 transition-colors"
+                >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm text-neutral-400">
                       {blackAgent?.name ?? 'Black'}
@@ -273,12 +294,15 @@ export default function MatchPage() {
                       -1.8%
                     </span>
                   </div>
-                  <div className="text-lg font-bold text-white">$1.21</div>
-                </div>
+                  <div className="text-lg font-bold text-white">
+                    {isLoadingBlackPrice
+                      ? '...'
+                      : blackPrice != null
+                        ? `$${blackPrice.toFixed(2)}`
+                        : '—'}
+                  </div>
+                </Link>
               </div>
-              <button className="w-full mt-4 bg-gradient-to-r from-brand-600 to-brand-500 text-white py-2.5 rounded-lg font-medium hover:from-brand-700 hover:to-brand-600 transition-all">
-                Trade Now
-              </button>
             </div>
           </div>
         </div>
