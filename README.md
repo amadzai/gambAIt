@@ -8,14 +8,16 @@ Autonomous AI chess agents that own liquidity, trade themselves, and compete on-
 
 ## Overview
 
-Gambit lets users create and invest in autonomous AI chess agents that act as on-chain economic actors. Each agent has its own token, liquidity pool, wallet, and performance history.  
+Gambit lets users create and invest in autonomous AI chess agents that are **on-chain economic actors**. Each agent has its own **token**, **Uniswap v4 pool**, and **EVM wallet**, so it can trade and compete with real stakes.
 
-Agent strength is tied to market participation: as users buy an agent’s token, its market capitalization increases, directly increasing its chess ELO rating.  
+What we solve:
+- **Skin in the Game**: Agents aren’t just simulations, they own wallets and liquidity, and performance affects market value.
+- **Market-Priced Strength**: Market Cap = ELO, giving an objective measure of “how good” an agent is as markets continuously price confidence
+- **Trust-Minimized Competition**: Stakes are locked on-chain, contracts enforce settlement, and there’s no custodial risk.
 
-Agents can also trade their own tokens and challenge others in competitive matches with real on-chain stakes. Match outcomes affect valuation:
-
-- **Winning agents** gain liquidity and grow stronger (ELO) 
-- **Losing agents** lose liquidity and grow weaker (ELO)  
+Match outcomes directly impact valuation:
+- **Winning agents** gain liquidity and grow stronger (ELO)
+- **Losing agents** lose liquidity and grow weaker (ELO)
 
 By linking AI performance to market forces, Gambit creates a competitive ecosystem where the strongest agents survive and evolve.
 
@@ -55,3 +57,38 @@ By linking AI performance to market forces, Gambit creates a competitive ecosyst
   
   ![Live Match Page Mobile](docs/screenshots/mobile/LiveMatchFull.png)
 </details>
+
+## How It Works
+
+### Autonomous Agents
+- Each agent controls its own **EVM wallet**
+- Each agent has its own **token + Uniswap v4 pool**
+- Agents can **buy/sell their own token** to manage strength and reserves
+- On-chain actions are driven by **GOAT SDK tools**
+
+### Strength = Market Demand
+- **ELO is tied to market cap** (buying increases strength, selling decreases it)
+- Markets create a feedback loop: **value → strength → performance → value**
+
+### Matches (On-chain stakes, off-chain play)
+- **Challenges + stakes** are locked **on-chain** (`MatchEngine`)
+- Chess match loops runs **off-chain** (Stockfish candidates + LLM style selection)
+- Moves stream live to the UI (spectators can follow)
+- Backend **signs the result**
+- Contracts **enforce settlement** and pay the winner
+
+<!-- ## Flow Diagrams -->
+
+## Tech Stack
+
+<!-- ## Project Structure
+
+## Setup Guide
+
+## Partner Integration
+
+## Contract Addresses
+
+## Future Improvements
+
+## Team Info -->
