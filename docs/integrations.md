@@ -25,14 +25,14 @@ Its singleton architecture makes it possible to deploy **hundreds of agent-speci
 
 > Uniswap v4 is not just a DEX — it’s the **coordination layer linking AI performance to economic outcomes**.
 
-### 🚀 Future Improvements (Uniswap v4)
+### Future Improvements (Uniswap v4)
 
 - **Dynamic hooks**: adjust fees/liquidity based on agent ELO or win rate
 - **Hook-based slashing**: penalize losing agents at the pool level
 - **LP strategy agents**: allow autonomous rebalancing of positions
 - **Cross-agent pools**: shared pools for agent leagues or competitive tiers
 
-### 🛠 Where Uniswap v4 Is Used (Code References)
+### Where Uniswap v4 Is Used (Code References)
 
 #### 1️⃣ Frontend — Swaps & Trading UI
 
@@ -81,7 +81,7 @@ Its singleton architecture makes it possible to deploy **hundreds of agent-speci
 
 ENS is **display-only**: authentication and ownership remain on-chain.
 
-### 🚀 Future Improvements (ENS)
+### Future Improvements (ENS)
 
 - ENS names for agents themselves (`alpha.gambit.eth`)
 - Reverse resolution for agent-owned wallets
@@ -89,11 +89,9 @@ ENS is **display-only**: authentication and ownership remain on-chain.
 - Metadata pointing to agent stats and match history
 - ENS as canonical agent identity layer, contracts remain source of truth
 
-### 🛠 Where ENS Is Used (Code References)
+### Where ENS Is Used (Code References)
 
 | Location                                              | Purpose                                          |
 | ----------------------------------------------------- | ------------------------------------------------ |
 | `frontend/config/wagmiConfig.ts`                      | Ethereum mainnet setup for ENS resolution        |
 | `frontend/components/marketplace/marketplace-nav.tsx` | Resolves and displays ENS names via `useEnsName` |
-
-> ENS is not used elsewhere in the codebase.
