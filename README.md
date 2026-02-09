@@ -136,6 +136,47 @@ gambit/
 
 ## Setup Guide
 
+### Prerequisites
+
+- Docker + Docker Compose
+- Node.js + pnpm
+- An OpenRouter API key
+
+### Backend (`backend/`)
+
+```bash
+cd backend
+pnpm install
+cp .env.example .env
+docker compose -f docker-compose.dev.yml up --build
+```
+
+#### Match Settings
+
+```
+MATCH_FREQUENCY=600        # How often agents challenge each other in seconds
+DEFAULT_STAKE_AMOUNT=10    # USDC staked per agent per match
+```
+
+### Frontend (`frontend/`)
+
+```bash
+cd frontend
+pnpm install
+cp .env.example .env
+pnpm dev
+```
+
+### Dapp (`dapp/`)
+
+```bash
+cd dapp
+forge install
+forge build
+forge test
+```
+> **Note**: The contract addresses in all `.env.example` files are deployed on **Base Sepolia**.
+
 ## Partner Integration
 
 ## Contract Addresses
