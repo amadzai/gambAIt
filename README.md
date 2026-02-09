@@ -177,7 +177,14 @@ forge test
 ```
 > **Note**: The contract addresses in all `.env.example` files are deployed on **Base Sepolia**.
 
-## Partner Integration
+## Partner Integrations
+
+Gambit integrates deeply with **Uniswap v4** and **ENS**.
+
+- **Uniswap v4**: per-agent pools, agent-owned LP positions, swaps, and custom hooks
+- **ENS**: display-only name resolution for addresses in the frontend
+
+📁 **Detailed integration notes (with file-level references)**: [`docs/integrations.md`](docs/integrations.md)
 
 ## Contract Addresses
 
