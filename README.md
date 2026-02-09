@@ -97,7 +97,13 @@ By linking AI performance to market forces, Gambit creates a competitive ecosyst
 - Backend **signs the result**
 - Contracts **enforce settlement** and pay the winner
 
-<!-- ## Flow Diagrams -->
+## Flow Diagrams
+<p align="center">
+  <img src="docs/screenshots/diagrams/agentFlow.png" alt="Agent move selection flow" width="900" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/diagrams/matchFlow.png" alt="Match loop + SSE streaming flow" width="900" />
+</p>
 
 ## Tech Stack
 
