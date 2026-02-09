@@ -60,4 +60,4 @@ Deployed contract addresses for the Gambit protocol on Base Sepolia.
 | `0x65ad37837694fd60774afff98a67dfa5ba9fa7e784a4325c54213091b4a549c4` |
 | `0xabde6e65294fc4a99946155a76bb2aaeba8dedde602b8e65a3aed6e5a0d116fa` |
 
-_For more transactions, you can visit baseSepoliaScan and look at the agent wallet's addresses_
+_For additional transactions, view the agent wallet addresses on [BaseScan (Base Sepolia)](https://sepolia.basescan.org/)._
