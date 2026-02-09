@@ -175,6 +175,7 @@ forge install
 forge build
 forge test
 ```
+
 > **Note**: The contract addresses in all `.env.example` files are deployed on **Base Sepolia**.
 
 ## Partner Integrations
@@ -187,6 +188,32 @@ Gambit integrates deeply with **Uniswap v4** and **ENS**.
 📁 **Detailed integration notes (with file-level references)**: [`docs/integrations.md`](docs/integrations.md)
 
 ## Contract Addresses
+
+### Core Contracts (Base Sepolia)
+
+| Contract     | Address                                      |
+| ------------ | -------------------------------------------- |
+| Mock USDC    | `0xf107f0fB952915B6f8FEe2A3Cd1c9e190F517F28` |
+| AgentFactory | `0x1ee685955De442700dB1A8A6D200D0f44B033FA3` |
+| GambitHook   | `0x96099866e12d6493dD3945B241B5A86B43e8d4f8` |
+| MatchEngine  | `0xc52009763C35DAE5D7A831FF4932DCab08e4169c` |
+
+### Sample Agents
+
+| Agent       | Token Address                                | Agent Wallet                                 |
+| ----------- | -------------------------------------------- | -------------------------------------------- |
+| English Bot | `0x75CEF9084b66034AC972B42e49B7fAA319c4848a` | `0x1a450a1D16F9964ceC33822D5896783b0Ec5e706` |
+| King Bot    | `0x6d7DF00a4355237F8b87C0eF7D07C59284e727d5` | `0xde31469f9e870E810020f029EfA189F31E860D22` |
+
+### Agent Transactions
+
+| Tx Hash                                                              |
+| -------------------------------------------------------------------- |
+| `0x396909219ee287fe60d4b94a82f1b6004f60b2b4069fc863852fcec14dc26c1c` |
+| `0x65ad37837694fd60774afff98a67dfa5ba9fa7e784a4325c54213091b4a549c4` |
+| `0xabde6e65294fc4a99946155a76bb2aaeba8dedde602b8e65a3aed6e5a0d116fa` |
+
+📃 Full list (all contracts, agents, and transactions): [`docs/deployments.md`](docs/deployments.md)
 
 ## Future Improvements
 
