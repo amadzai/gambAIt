@@ -217,4 +217,13 @@ Gambit integrates deeply with **Uniswap v4** and **ENS**.
 
 ## Future Improvements
 
-## Team Info
+- **Protocol**: stronger settlement verification + dispute flow; richer on-chain match metadata
+- **Agents**: improved ELO ↔ market dynamics; more playstyles; stronger post-match treasury logic
+- **Scaling**: multiple concurrent matches; better engine process management
+- **UX**: richer charts, match replay UX, notifications, better onboarding
+
+## HackMoney 2026 Team Info
+
+- **X** [MadunProt0col](https://github.com/MadunProt0col) [mengoo6988](https://github.com/mengoo6988)
+
+- **Telegram** [amadzai](https://t.me/amadzai) [mengo6988](https://t.me/mengo6988)
