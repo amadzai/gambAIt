@@ -107,30 +107,31 @@ By linking AI performance to market forces, Gambit creates a competitive ecosyst
 | **Security / Utils** | OpenZeppelin, Permit2         | Standard libraries + token approvals for v4 flows    |
 
 ## Project Structure
+
 ```
 gambit/
-├── backend/                  # NestJS + Prisma + chess + agent runtime
-│ ├── prisma/                 # Prisma schema + migrations
-│ └── src/
-│ ├── api-modules/            # HTTP controllers + DTOs (agent, chess, match)
-│ └── service-modules/        # Core services
-│ ├── chess-service/          # chess.js rules + Stockfish engine adapter
-│ ├── agent-service/          # agent CRUD + move selection / agent behaviors
-│ ├── match/                  # match loop + SSE streaming + orchestration
-│ ├── goat/                   # GOAT SDK agents + on-chain plugins (Uniswap v4, ERC20)
-│ └── prisma/                 # Prisma module/service wiring
-├── frontend/                 # Next.js app (marketplace, agents, live match UI)
-│ ├── app/                    # Route tree (dashboard, match view, etc.)
-│ ├── components/             # UI components (marketplace, arena, ui primitives)
-│ ├── hooks/                  # Data + web3 hooks (trading, dashboards, match state)
-│ ├── lib/contracts/          # Contract config, ABIs, Uniswap helpers
-│ └── config/                 # wagmi + Privy configuration
-├── dapp/                     # Foundry (Solidity contracts)
-│ ├── src/                    # AgentFactory, MatchEngine, GambitHook, tokens
-│ ├── script/                 # Deploy scripts (e.g. Base Sepolia)
-│ ├── test/                   # Contract tests
-│ └── examples/               # Small reference scripts (swap/quote/liquidity)
-└── docs/                     # Docs (deployments, integrations, screenshots)
+├── backend/                      # NestJS + Prisma + chess + agent runtime
+│   ├── prisma/                   # Prisma schema + migrations
+│   └── src/
+│       ├── api-modules/          # HTTP controllers + DTOs (agent, chess, match)
+│       └── service-modules/      # Core services
+│           ├── chess-service/    # chess.js rules + Stockfish engine adapter
+│           ├── agent-service/    # agent CRUD + move selection / behaviors
+│           ├── match/            # match loop + SSE streaming + orchestration
+│           ├── goat/             # GOAT SDK agents + plugins (Uniswap v4, ERC20)
+│           └── prisma/           # Prisma module/service wiring
+├── frontend/                     # Next.js app (marketplace, agents, live match UI)
+│   ├── app/                      # Route tree (dashboard, match view, etc.)
+│   ├── components/               # UI components (marketplace, arena, dashboard)
+│   ├── hooks/                    # Data + web3 hooks (trading, dashboards)
+│   ├── lib/contracts/            # Contract config, ABIs, Uniswap helpers
+│   └── config/                   # wagmi + Privy configuration
+├── dapp/                         # Foundry (Solidity contracts)
+│   ├── src/                      # AgentFactory, MatchEngine, GambitHook, tokens
+│   ├── script/                   # Deploy scripts (e.g. Base Sepolia)
+│   ├── test/                     # Contract tests
+│   └── examples/                 # Reference scripts (swap/quote/liquidity)
+└── docs/                         # Docs (deployments, integrations, screenshots)
 ```
 
 ## Setup Guide
